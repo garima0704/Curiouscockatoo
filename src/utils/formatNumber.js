@@ -39,13 +39,13 @@ export function formatNumber(value, forceScientific = false, approx = false) {
     const exp = expRaw.replace("+", "");
     return (
       <>
-        {base} × 10<sup>{toSuperscript(exp)}</sup>
+        {base} × 10<sup style={{ fontSize: "1.1em" }}>{toSuperscript(exp)}</sup>
       </>
     );
   }
 
   return approx
-    ? Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })
+    ? Number(value).toLocaleString(undefined, { maximumFractionDigits: 6 })
     : Number(value).toLocaleString();
 }
 
@@ -64,6 +64,6 @@ export function formatNumberString(value, forceScientific = false, approx = fals
   }
 
   return approx
-    ? Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })
+    ? Number(value).toLocaleString(undefined, { maximumFractionDigits: 6 })
     : Number(value).toLocaleString();
 }

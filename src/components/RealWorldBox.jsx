@@ -1,107 +1,124 @@
 import React from "react";
 import { formatNumber } from "../utils/formatNumber";
+import { parseScientific } from "../utils/parseScientific";
 
-// Helper to parse scientific_value safely
-function parseScientific(val) {
-  if (val == null) return null;
-  if (typeof val === "number") return val;
-
-  if (typeof val === "object" && "mantissa" in val && "exponent" in val) {
-    return val.mantissa * Math.pow(10, val.exponent);
-  }
-
-  const num = Number(val);
-  return isNaN(num) ? null : num;
+function cleanHTMLNotes(html) {
+  if (!html) return "";
+  return html
+    .replace(/<p[^>]*>(\s|&nbsp;)*<\/p>/gi, "")
+    .replace(/<div[^>]*>(\s|&nbsp;)*<\/div>/gi, "")
+    .replace(/<br\s*\/?>/gi, "")
+    .trim();
 }
 
-function RealWorldBox({ selected, setSelected, items = [], scientificToggle = true }) {
+function RealWorldBox({
+  selected,
+  setSelected,
+  items = [],
+  scientificToggle = true,
+}) {
   const safeItems = Array.isArray(items) ? items : [];
 
-  const sortedItems = [...safeItems].sort((a, b) => {
-    const isAInfinite = a.expression?.toLowerCase().includes("infin");
-    const isBInfinite = b.expression?.toLowerCase().includes("infin");
+  return (
+    <div
+      className="pr-1 flex flex-col gap-3 overflow-y-auto"
+      style={{ overflowX: "hidden" }}
+    >
+      {/* Top gradient spacers */}
+      <div className="h-6 bg-gray-300 rounded opacity-70" />
+      <div className="h-6 bg-gray-200 rounded opacity-70" />
+      <div className="h-6 bg-gray-100 rounded opacity-70" />
 
-    // Push items with 'infinite' expressions to the end
-    if (isAInfinite && !isBInfinite) return 1;
-    if (!isAInfinite && isBInfinite) return -1;
-    if (isAInfinite && isBInfinite) return 0;
+      {/* Real-world items */}
+        {safeItems.map((item, index) => {
+  // Blank item rendering
+  if (item.type === "blank") {
+    return (
+      <div
+        key={`blank-${item.power}-${index}`}
+        className="bg-gray-100 border border-dashed border-gray-300 p-4 rounded text-center text-gray-700 font-mono text-base min-h-[80px] flex items-center justify-center"
+      >
+        10<sup>{item.power}</sup>
+      </div>
+    );
+  }
 
-    const aVal = parseScientific(a.scientific_value);
-    const bVal = parseScientific(b.scientific_value);
+  // Real item rendering
+  const isSelected = selected?.id === item.id;
+  const isInfinite = item.expression?.toLowerCase().includes("infin");
+  const parsedScientific = parseScientific(item.scientific_value);
+const parsedScientificValue = typeof parsedScientific === "number" ? parsedScientific : null;
 
-    // Items with invalid scientific values go last
-    if (aVal == null || isNaN(aVal)) return 1;
-    if (bVal == null || isNaN(bVal)) return -1;
+  const parsedApprox = item.approx_value;
 
-    return aVal - bVal;
-  });
+  const displayValue = item.expression ? (
+    <span dangerouslySetInnerHTML={{ __html: item.expression }} />
+  ) : scientificToggle ? (
+    parsedScientific != null ? (
+      <>
+        {formatNumber(parsedScientific, true)} {item?.expand?.unit?.symbol || ""}
+      </>
+    ) : parsedApprox != null ? (
+      <>
+        {formatNumber(parsedApprox, false, true)} {item?.expand?.unit?.symbol || ""}
+      </>
+    ) : (
+      "..."
+    )
+  ) : parsedApprox != null ? (
+    <>
+      {formatNumber(parsedApprox, false, true)} {item?.expand?.unit?.symbol || ""}
+    </>
+  ) : (
+    "..."
+  );
 
   return (
-    <div className="overflow-y-auto max-h-[300px] pr-1 flex flex-col gap-3" style={{ overflowX: "hidden" }}>
-      {sortedItems.map((item) => {
-        const isSelected = selected?.id === item.id;
-        const isInfinite = item.expression?.toLowerCase().includes("infin");
-        const parsedScientific = parseScientific(item.scientific_value);
-        const parsedApprox = item.approx_value;
+    <div
+      key={item.id}
+      onClick={() => setSelected?.(item)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") setSelected?.(item);
+      }}
+      className={`cursor-pointer border pt-3 pb-1 px-3 rounded shadow-sm ${
+        isSelected ? "bg-blue-50 border-blue-400" : "bg-white"
+      }`}
+    >
+      <div className="font-semibold text-blue-800 text-center">
+        {item.name}
+      </div>
+      <div className="mt-1 text-center text-blue-600 font-mono text-base">
+  {item.expression ? (
+    <span dangerouslySetInnerHTML={{ __html: item.expression }} />
+  ) : item.approx_value != null ? (
+    <>
+      {formatNumber(item.approx_value, false, true)} {item?.expand?.unit?.symbol || ""}
+    </>
+  ) : (
+    "—"
+  )}
+</div>
 
-        // Display Value (Scientific or Approx, fallback to expression)
-        const displayValue = item.expression ? (
-          <span dangerouslySetInnerHTML={{ __html: item.expression }} />
-        ) : scientificToggle ? (
-          parsedScientific != null ? (
-            formatNumber(parsedScientific, true)
-          ) : (
-            "..."
-          )
-        ) : parsedApprox != null ? (
-          <>
-            {formatNumber(parsedApprox, false, true)} {item?.expand?.unit?.symbol || ""}
-          </>
-        ) : (
-          "..."
-        );
 
-        return (
-          <div
-            key={item.id}
-            onClick={() => setSelected?.(item)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") setSelected?.(item);
-            }}
-            className={`cursor-pointer border p-3 rounded shadow-sm ${
-              isSelected ? "bg-blue-50 border-blue-400" : "bg-white"
-            }`}
-          >
-            {/* Name */}
-            <div className="font-semibold text-blue-800 text-center">{item.name}</div>
 
-            {/* Values row */}
-            <div className="text-sm mt-1 flex justify-between text-blue-600 font-mono">
-              {/* Scientific value (always shows if valid, else Infinite) */}
-              <span>
-                {isInfinite
-                  ? "Infinite"
-                  : parsedScientific != null
-                  ? formatNumber(parsedScientific, true)
-                  : "..."}
-              </span>
+      {item.notes && (
+        <div
+          className="prose prose-sm max-w-none text-left text-gray-600 mt-2 [&_p]:my-1 [&_ul]:my-1 [&_li]:my-1 [&> :last-child]:mb-0"
+          dangerouslySetInnerHTML={{ __html: cleanHTMLNotes(item.notes) }}
+        />
+      )}
+    </div>
+  );
+})}
 
-              {/* Displayed Approx or Expression */}
-              <span>{displayValue}</span>
-            </div>
+          
 
-            {/* Notes */}
-            {item.notes && (
-              <div
-                className="prose max-w-none text-xs text-gray-500 italic mt-2 text-center"
-                dangerouslySetInnerHTML={{ __html: item.notes }}
-              />
-            )}
-          </div>
-        );
-      })}
+      {/* Bottom gradient spacers */}
+      <div className="h-6 bg-gray-100 rounded opacity-70" />
+      <div className="h-6 bg-gray-200 rounded opacity-70" />
+      <div className="h-6 bg-gray-300 rounded opacity-70" />
     </div>
   );
 }

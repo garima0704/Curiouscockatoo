@@ -62,7 +62,8 @@
 
 /* Superscript styling for exponents */
 sup {
-  font-size: 0.75em;
+  font-size: 1em; /* You can even try 1.1em or 1.2em */
+  font-weight: bold;
   line-height: 1;
   vertical-align: super;
 }
