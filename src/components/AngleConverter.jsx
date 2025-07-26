@@ -4,6 +4,7 @@ import AngleRealWorldBox from "./AngleRealWorldBox";
 import { formatNumber } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
+import { angleUnits } from "../data/angleUnits"; 
 
 function AngleConverter({ categoryId }) {
   const theme = useTheme();
@@ -71,44 +72,51 @@ function AngleConverter({ categoryId }) {
     fetchUnits();
   }, [categoryId]);
 
-  useEffect(() => {
-    const fetchRealWorldItems = async () => {
-      if (!fromComparisonUnit) return;
+useEffect(() => {
+  const fetchRealWorldItems = async () => {
+    if (!fromComparisonUnit) return;
 
-      const items = await pb.collection("realworld_items").getFullList({
-        filter: `category = "${categoryId}"`,
-      });
+    const items = await pb.collection("realworld_items").getFullList({
+      filter: `category = "${categoryId}"`,
+    });
 
-      const safeItems = items.filter((item) => item.unit !== null);
+    const safeItems = items.filter(
+      (item) =>
+        item.distance_unit &&
+        angleUnits.some((u) => u.symbol === item.distance_unit)
+    );
 
-      const getVal = (item) => {
-        const approxRaw = item.approx_value?.toString().trim();
-        const sciRaw = item.scientific_value?.toString().trim();
+    const getVal = (item) => {
+  const fromUnit = angleUnits.find((u) => u.symbol === item.distance_unit);
+  const val = parseFloat(item.distance_value);
 
-        const approx = approxRaw ? parseFloat(approxRaw) : NaN;
-        const sci = sciRaw ? parseFloat(parseScientific(sciRaw)) : NaN;
+  if (!fromUnit || isNaN(val)) {
+    console.warn(`SKIPPED: ${item.distance_value} ${item.distance_unit}`);
+    return Infinity;
+  }
 
-        const isZeroOrMissing = (v) => isNaN(v) || v === 0;
+  const converted = val * fromUnit.to_base_factor;
+  console.log(`ITEM: ${val} ${fromUnit.symbol} → ${converted} m`);
+  return converted;
+};
 
-        if (isZeroOrMissing(approx) && isZeroOrMissing(sci)) return Infinity;
-        if (!isNaN(approx) && approx !== 0) return approx;
-        if (!isNaN(sci) && sci !== 0) return sci;
 
-        return Infinity;
-      };
+    const sortedItems = [...safeItems].sort((a, b) => getVal(a) - getVal(b));
 
-      const sortedItems = [...safeItems].sort((a, b) => getVal(a) - getVal(b));
-      setRealWorldItems(sortedItems);
-      setSelectedItems(
-        sortedItems.slice(0, 3).map((item) => ({
-          distance_value: item.distance_value,
-          distance_unit: item.distance_unit,
-        })),
-      );
-    };
+    setRealWorldItems(sortedItems);
 
-    fetchRealWorldItems();
-  }, [fromComparisonUnit, categoryId]);
+    setSelectedItems(
+      sortedItems.slice(0, 3).map((item) => ({
+        distance_value: item.distance_value,
+        distance_unit: item.distance_unit,
+      }))
+    );
+  };
+
+  fetchRealWorldItems();
+}, [fromComparisonUnit, categoryId]);
+
+
 
   const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromConversionUnit);
@@ -277,8 +285,10 @@ function AngleConverter({ categoryId }) {
       )}
 
       {/* Comparison Section */}
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
+		<div className="w-full text-center text-xl font-bold text-gray-700">
+            Conmparison
+          </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">	  
         {/* From Comparison Block */}
         <div className="flex flex-col items-start justify-start gap-3 bg-white p-4 rounded-xl shadow">
           <div className="w-full flex justify-center">

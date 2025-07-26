@@ -1,37 +1,50 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { Link } from "react-router-dom";
 
 export default function Header() {
   const theme = useTheme();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <header
-      className="shadow w-full py-2 px-4 sm:py-3"
-      style={{
-        backgroundColor: theme?.headerBg || theme?.surface || "white",
-        color: theme?.text || "#1f2937",
-        fontFamily: theme?.font || "inherit",
-      }}
-    >
-      <div className="w-full flex justify-center items-center">
-        <Link to="/">
-          {theme?.logo ? (
-            <img
-              src={theme.logo}
-              alt="Logo"
-              className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full bg-white p-1 object-contain transition-all"
-            />
-          ) : (
-            <h1
-              className="text-xl sm:text-2xl font-bold"
-              style={{ color: theme?.primary || "#1D4ED8" }}
-            >
-              Curiouscockatoo
-            </h1>
-          )}
-        </Link>
-      </div>
-    </header>
+  className={`fixed top-0 z-50 w-full py-2 px-0 sm:py-3 transition-shadow duration-300 ${
+    scrolled ? "shadow-md" : ""
+  }`}
+  style={{
+    backgroundColor: theme?.headerBg || theme?.surface || "white",
+    color: theme?.text || "#1f2937",
+    fontFamily: theme?.font || "inherit",
+  }}
+>
+  <div className="max-w-7xl mx-auto px-6 flex justify-start items-center">
+    <Link to="/">
+      {theme?.logo ? (
+        <img
+          src={theme.logo}
+          alt="Logo"
+          className="h-11 sm:h-14 md:h-16 object-contain transition-all"
+        />
+      ) : (
+        <h1
+          className="text-xl sm:text-2xl font-bold"
+          style={{ color: theme?.primary || "#1D4ED8" }}
+        >
+          Curiouscockatoo
+        </h1>
+      )}
+    </Link>
+  </div>
+</header>
+
   );
 }

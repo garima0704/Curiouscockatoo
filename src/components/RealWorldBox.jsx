@@ -30,90 +30,91 @@ function RealWorldBox({
       <div className="h-6 bg-gray-100 rounded opacity-70" />
 
       {/* Real-world items */}
-        {safeItems.map((item, index) => {
-  // Blank item rendering
-  if (item.type === "blank") {
-    return (
-      <div
-        key={`blank-${item.power}-${index}`}
-        className="bg-gray-100 border border-dashed border-gray-300 p-4 rounded text-center text-gray-700 font-mono text-base min-h-[80px] flex items-center justify-center"
-      >
-        10<sup>{item.power}</sup>
-      </div>
-    );
-  }
+      {safeItems.map((item, index) => {
+        // Blank item rendering
+        if (item.type === "blank") {
+          return (
+            <div
+              key={`blank-${item.power}-${index}`}
+              className="bg-gray-100 border border-dashed border-gray-300 p-4 rounded text-center text-gray-700 font-mono text-base min-h-[80px] flex items-center justify-center"
+            >
+              10<sup>{item.power}</sup>
+            </div>
+          );
+        }
 
-  // Real item rendering
-  const isSelected = selected?.id === item.id;
-  const isInfinite = item.expression?.toLowerCase().includes("infin");
-  const parsedScientific = parseScientific(item.scientific_value);
-const parsedScientificValue = typeof parsedScientific === "number" ? parsedScientific : null;
+        // Real item rendering
+        const isSelected = selected?.id === item.id;
+        const isInfinite = item.expression?.toLowerCase().includes("infin");
+        const parsedScientific = parseScientific(item.scientific_value);
+        const parsedScientificValue =
+          typeof parsedScientific === "number" ? parsedScientific : null;
 
-  const parsedApprox = item.approx_value;
+        const parsedApprox = item.approx_value;
 
-  const displayValue = item.expression ? (
-    <span dangerouslySetInnerHTML={{ __html: item.expression }} />
-  ) : scientificToggle ? (
-    parsedScientific != null ? (
-      <>
-        {formatNumber(parsedScientific, true)} {item?.expand?.unit?.symbol || ""}
-      </>
-    ) : parsedApprox != null ? (
-      <>
-        {formatNumber(parsedApprox, false, true)} {item?.expand?.unit?.symbol || ""}
-      </>
-    ) : (
-      "..."
-    )
-  ) : parsedApprox != null ? (
-    <>
-      {formatNumber(parsedApprox, false, true)} {item?.expand?.unit?.symbol || ""}
-    </>
-  ) : (
-    "..."
-  );
+        const displayValue = item.expression ? (
+          <span dangerouslySetInnerHTML={{ __html: item.expression }} />
+        ) : scientificToggle ? (
+          parsedScientific != null ? (
+            <>
+              {formatNumber(parsedScientific, true)}{" "}
+              {item?.expand?.unit?.symbol || ""}
+            </>
+          ) : parsedApprox != null ? (
+            <>
+              {formatNumber(parsedApprox, false, true)}{" "}
+              {item?.expand?.unit?.symbol || ""}
+            </>
+          ) : (
+            "..."
+          )
+        ) : parsedApprox != null ? (
+          <>
+            {formatNumber(parsedApprox, false, true)}{" "}
+            {item?.expand?.unit?.symbol || ""}
+          </>
+        ) : (
+          "..."
+        );
 
-  return (
-    <div
-      key={item.id}
-      onClick={() => setSelected?.(item)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") setSelected?.(item);
-      }}
-      className={`cursor-pointer border pt-3 pb-1 px-3 rounded shadow-sm ${
-        isSelected ? "bg-blue-50 border-blue-400" : "bg-white"
-      }`}
-    >
-      <div className="font-semibold text-blue-800 text-center">
-        {item.name}
-      </div>
-      <div className="mt-1 text-center text-blue-600 font-mono text-base">
-  {item.expression ? (
-    <span dangerouslySetInnerHTML={{ __html: item.expression }} />
-  ) : item.approx_value != null ? (
-    <>
-      {formatNumber(item.approx_value, false, true)} {item?.expand?.unit?.symbol || ""}
-    </>
-  ) : (
-    "—"
-  )}
-</div>
+        return (
+          <div
+            key={item.id}
+            onClick={() => setSelected?.(item)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") setSelected?.(item);
+            }}
+            className={`cursor-pointer border pt-3 pb-1 px-3 rounded shadow-sm ${
+              isSelected ? "bg-blue-50 border-blue-400" : "bg-white"
+            }`}
+          >
+            <div className="font-semibold text-blue-800 text-center">
+              {item.name}
+            </div>
+            <div className="mt-1 text-center text-blue-600 font-mono text-base">
+              {item.expression ? (
+                <span dangerouslySetInnerHTML={{ __html: item.expression }} />
+              ) : item.approx_value != null ? (
+                <>
+                  {formatNumber(item.approx_value, false, true)}{" "}
+                  {item?.expand?.unit?.symbol || ""}
+                </>
+              ) : (
+                "—"
+              )}
+            </div>
 
-
-
-      {item.notes && (
-        <div
-          className="prose prose-sm max-w-none text-left text-gray-600 mt-2 [&_p]:my-1 [&_ul]:my-1 [&_li]:my-1 [&> :last-child]:mb-0"
-          dangerouslySetInnerHTML={{ __html: cleanHTMLNotes(item.notes) }}
-        />
-      )}
-    </div>
-  );
-})}
-
-          
+            {item.notes && (
+              <div
+                className="prose prose-sm max-w-none text-left text-gray-600 mt-2 [&_p]:my-1 [&_ul]:my-1 [&_li]:my-1 [&> :last-child]:mb-0"
+                dangerouslySetInnerHTML={{ __html: cleanHTMLNotes(item.notes) }}
+              />
+            )}
+          </div>
+        );
+      })}
 
       {/* Bottom gradient spacers */}
       <div className="h-6 bg-gray-100 rounded opacity-70" />

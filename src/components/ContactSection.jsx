@@ -27,7 +27,7 @@ export default function ContactSection({ formData, onChange, onSubmit, status, t
             <input
               type="text"
               name="name"
-              placeholder="Your Name"
+              placeholder="Name"
               className="w-full border border-gray-300 rounded px-4 py-2"
               style={{ backgroundColor: theme?.base }}
               value={formData.name}
@@ -37,7 +37,7 @@ export default function ContactSection({ formData, onChange, onSubmit, status, t
             <input
               type="email"
               name="email"
-              placeholder="Your Email"
+              placeholder="Email"
               className="w-full border border-gray-300 rounded px-4 py-2"
               style={{ backgroundColor: theme?.base }}
               value={formData.email}
@@ -46,7 +46,7 @@ export default function ContactSection({ formData, onChange, onSubmit, status, t
             />
             <textarea
               name="message"
-              placeholder="Your Message"
+              placeholder="Message"
               className="w-full border border-gray-300 rounded px-4 py-2"
               rows="5"
               style={{ backgroundColor: theme?.base }}

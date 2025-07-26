@@ -326,16 +326,14 @@ function Converter({ categoryId }) {
 
                     <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
                       {selectedItem && inputValue ? (
-                        <>
-                          {formatNumber(
-                            getComparisonValue(selectedItem),
-                            comparisonToggles[index],
-                          )}{" "}
-                          {selectedItem?.expand?.unit?.symbol || ""}
-                        </>
-                      ) : (
-                        "..."
-                      )}
+  formatNumber(
+    getComparisonValue(selectedItem),
+    comparisonToggles[index],
+  )
+) : (
+  "..."
+)}
+
                     </div>
                     <div className="h-[300px] overflow-y-auto pr-1">
                       <RealWorldBox

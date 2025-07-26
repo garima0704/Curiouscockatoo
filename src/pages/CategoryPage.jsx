@@ -14,6 +14,7 @@ function CategoryPage({ categoryName }) {
   const [error, setError] = useState(null);
   const [topNote, setTopNote] = useState("");
   const [prefixes, setPrefixes] = useState([]);
+  const [category, setCategory] = useState(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -25,6 +26,7 @@ function CategoryPage({ categoryName }) {
             expand: "auxiliary",
           });
 
+        setCategory(mainCategory);
         setCategoryId(mainCategory.id);
 
         const rawTopNote = mainCategory.top_note || "";
@@ -81,26 +83,47 @@ function CategoryPage({ categoryName }) {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ backgroundColor: theme?.background, color: theme?.text, fontFamily: theme?.font }}
+      style={{
+        backgroundColor: theme?.background,
+        color: theme?.text,
+        fontFamily: theme?.font,
+      }}
     >
       <Header />
 
-      <main className="flex-grow px-6 py-10 max-w-7xl mx-auto space-y-16">
+      <main className="flex-grow px-6 pt-24 pb-10 max-w-7xl mx-auto space-y-16">
+        {/* Category Heading */}
+        <div className="pt-10 px-0 pb-0"> {/* Increased top padding, removed bottom space */}
+  <h1
+    className="text-2xl sm:text-3xl font-bold text-left mb-2"
+    style={{ color: "#1e40af" }}
+  >
+    {category?.name}
+  </h1>
+</div>
+
+        {/* Auxiliary Section */}
         {total > 0 && (
-          <section>
-            <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: theme?.primary }}>
+          <section className="-mt-6">
+            <h2
+              className="text-3xl font-bold mb-6 text-center"
+              style={{ color: theme?.primary }}
+            >
               Auxiliary Calculation
             </h2>
             <div className="grid gap-8 sm:grid-cols-2">
               {auxiliaryCategories.map((aux, index) => {
-                const isLastOdd = total % 2 === 1 && index === total - 1 && total > 1;
+                const isLastOdd =
+                  total % 2 === 1 && index === total - 1 && total > 1;
                 const isOnlyOne = total === 1;
 
                 return (
                   <div
                     key={aux.id}
                     className={`p-6 rounded-lg shadow hover:shadow-lg transition ${
-                      isLastOdd || isOnlyOne ? "sm:col-span-2 sm:mx-auto sm:w-1/2" : ""
+                      isLastOdd || isOnlyOne
+                        ? "sm:col-span-2 sm:mx-auto sm:w-1/2"
+                        : ""
                     }`}
                     style={{ backgroundColor: theme?.surface }}
                   >
@@ -115,11 +138,18 @@ function CategoryPage({ categoryName }) {
           </section>
         )}
 
+        {/* Main Converter */}
         <section>
-          <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: theme?.primary }}>
+          <h2
+            className="text-3xl font-bold mb-6 text-center"
+            style={{ color: theme?.primary }}
+          >
             Main Calculation
           </h2>
-          <div className="p-6 rounded-lg shadow space-y-4" style={{ backgroundColor: theme?.surface }}>
+          <div
+            className="p-6 rounded-lg shadow space-y-4"
+            style={{ backgroundColor: theme?.surface }}
+          >
             {topNote && (
               <div
                 className="prose max-w-none"
@@ -130,21 +160,35 @@ function CategoryPage({ categoryName }) {
           </div>
         </section>
 
+        {/* Fun Facts */}
         <section>
-          <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: theme?.primary }}>
+          <h2
+            className="text-3xl font-bold mb-6 text-center"
+            style={{ color: theme?.primary }}
+          >
             Fun Facts
           </h2>
-          <div className="px-6 py-6 rounded-lg shadow" style={{ backgroundColor: theme?.surface }}>
+          <div
+            className="px-6 py-6 rounded-lg shadow"
+            style={{ backgroundColor: theme?.surface }}
+          >
             <FunFacts categoryId={categoryId} />
           </div>
         </section>
 
+        {/* Prefixes */}
         <section>
-          <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: theme?.primary }}>
+          <h2
+            className="text-3xl font-bold mb-6 text-center"
+            style={{ color: theme?.primary }}
+          >
             Prefixes
           </h2>
 
-          <div className="hidden md:block rounded-lg shadow overflow-x-auto max-w-7xl mx-auto" style={{ backgroundColor: theme?.surface }}>
+          <div
+            className="hidden md:block rounded-lg shadow overflow-x-auto max-w-7xl mx-auto"
+            style={{ backgroundColor: theme?.surface }}
+          >
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-200 text-gray-800">
                 <tr>
@@ -158,11 +202,11 @@ function CategoryPage({ categoryName }) {
               <tbody className="divide-y divide-gray-100 text-center">
                 {prefixes.map((prefix) => (
                   <tr key={prefix.id} className="odd:bg-gray-50">
-                    <td className="px-4 py-2 w-1/6">{prefix.name || prefix.prefix}</td>
-                    <td className="px-4 py-2 w-1/6">{prefix.symbol}</td>
-                    <td className="px-4 py-2 w-1/4">{prefix.multiplier}</td>
-                    <td className="px-4 py-2 w-1/6">{prefix.exponential?.replace(/"/g, "")}</td>
-                    <td className="px-4 py-2 w-1/6 whitespace-pre-line">{prefix.description}</td>
+                    <td className="px-4 py-2">{prefix.name || prefix.prefix}</td>
+                    <td className="px-4 py-2">{prefix.symbol}</td>
+                    <td className="px-4 py-2">{prefix.multiplier}</td>
+                    <td className="px-4 py-2">{prefix.exponential?.replace(/"/g, "")}</td>
+                    <td className="px-4 py-2 whitespace-pre-line">{prefix.description}</td>
                   </tr>
                 ))}
               </tbody>
@@ -197,7 +241,11 @@ function CategoryPage({ categoryName }) {
         </section>
       </main>
 
-      <div className="text-sm px-4 py-3 mt-12 max-w-4xl mx-auto rounded" style={{ backgroundColor: theme?.surface, color: theme?.text }}>
+      {/* Disclaimer Note */}
+      <div
+        className="text-sm px-4 py-3 mt-12 max-w-4xl mx-auto rounded"
+        style={{ backgroundColor: theme?.surface, color: theme?.text }}
+      >
         <strong>Note:</strong> Some comparison figures are based on approximations, mean values, or estimates. Check important information for accuracy.
       </div>
 

@@ -20,7 +20,7 @@ export default function AllConverters({ allCategories, theme }) {
             className="border border-gray-200 rounded px-3 sm:px-4 py-2 sm:py-3 text-center text-gray-800 text-sm sm:text-base font-medium transition duration-200 hover:bg-blue-50 hover:shadow-md cursor-pointer"
             style={{ backgroundColor: theme?.surface }}
           >
-            {toTitleCase(cat.slug)}
+            {cat.name}
           </button>
         ))}
       </div>

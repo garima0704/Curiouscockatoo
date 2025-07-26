@@ -69,7 +69,7 @@ export default function Home() {
     >
       <Header />
 
-      <main className="flex-grow px-4 max-w-6xl mx-auto">
+      <main className="flex-grow px-4 max-w-6xl mx-auto pt-24 sm:pt-28">
         {/* Tabs + Auxiliary Converter */}
         <section className="mt-6 sm:mt-12">
           <CategoryTabs
