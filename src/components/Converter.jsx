@@ -83,6 +83,16 @@ function Converter({ categoryId }) {
       );
 
       const enrichedItems = distributeBlankCards(safeItems, 9);
+      
+	  // Sort items by power and approx_value within each power
+      enrichedItems.sort((a, b) => {
+        if (a.power !== b.power) return a.power - b.power;
+
+        const aApprox = a.approx_value ?? Infinity;
+        const bApprox = b.approx_value ?? Infinity;
+
+        return aApprox - bApprox;
+      });
       setRealWorldItems(enrichedItems);
     };
 
@@ -325,15 +335,12 @@ function Converter({ categoryId }) {
                     </div>
 
                     <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
-                      {selectedItem && inputValue ? (
-  formatNumber(
-    getComparisonValue(selectedItem),
-    comparisonToggles[index],
-  )
-) : (
-  "..."
-)}
-
+                      {selectedItem && inputValue
+                        ? formatNumber(
+                            getComparisonValue(selectedItem),
+                            comparisonToggles[index],
+                          )
+                        : ""}
                     </div>
                     <div className="h-[300px] overflow-y-auto pr-1">
                       <RealWorldBox
