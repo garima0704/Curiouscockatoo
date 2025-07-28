@@ -205,7 +205,9 @@ function CategoryPage({ categoryName }) {
                     <td className="px-4 py-2">{prefix.name || prefix.prefix}</td>
                     <td className="px-4 py-2">{prefix.symbol}</td>
                     <td className="px-4 py-2">{prefix.multiplier}</td>
-                    <td className="px-4 py-2">{prefix.exponential?.replace(/"/g, "")}</td>
+                    <td className="px-4 py-2 text-base">
+						{prefix.exponential?.replace(/"/g, "")}
+					</td>
                     <td className="px-4 py-2 whitespace-pre-line">{prefix.description}</td>
                   </tr>
                 ))}
