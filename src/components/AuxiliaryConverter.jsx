@@ -174,12 +174,16 @@ function AuxiliaryConverter({ categoryId }) {
           </div>
           <div className="bg-gray-100 p-2 text-center font-bold text-base rounded mb-2 h-[45px] text-blue-700 flex items-center justify-center">
             {toUnit ? (
-              <>
-                {formatNumber(getConvertedValue(), conversionToggle)}{" "}
-                {units.find((u) => u.id === toUnit)?.symbol || ""}
-              </>
+              inputValue && !isNaN(inputValue) ? (
+                <>
+                  {formatNumber(getConvertedValue(), conversionToggle)}{" "}
+                  {units.find((u) => u.id === toUnit)?.symbol || ""}
+                </>
+              ) : (
+                units.find((u) => u.id === toUnit)?.symbol || ""
+              )
             ) : (
-              "..."
+              ""
             )}
           </div>
           <div className="flex-1 overflow-y-auto border rounded p-2">
@@ -230,13 +234,13 @@ function AuxiliaryConverter({ categoryId }) {
             </button>
           </div>
           <div className="bg-gray-100 p-2 text-center font-bold text-base rounded mb-2 h-[45px] text-blue-700 flex items-center justify-center">
-            {selectedItem && inputValue ? (
+            {selectedItem && inputValue && !isNaN(getComparisonValue()) ? (
               <>
                 {formatNumber(getComparisonValue(), comparisonToggle)}{" "}
                 {selectedItem?.expand?.unit?.symbol || ""}
               </>
             ) : (
-              "..."
+              ""
             )}
           </div>
           <div className="flex-1 overflow-y-auto">

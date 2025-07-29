@@ -83,9 +83,12 @@ function Converter({ categoryId }) {
       );
 
       const enrichedItems = distributeBlankCards(safeItems, 9);
-      
-	  // Sort items by power and approx_value within each power
+
+      // Sort items by power and approx_value within each power
       enrichedItems.sort((a, b) => {
+        if (a.force_last_position && !b.force_last_position) return 1;
+        if (!a.force_last_position && b.force_last_position) return -1;
+
         if (a.power !== b.power) return a.power - b.power;
 
         const aApprox = a.approx_value ?? Infinity;
@@ -93,10 +96,22 @@ function Converter({ categoryId }) {
 
         return aApprox - bApprox;
       });
-      setRealWorldItems(enrichedItems);
-    };
 
-    fetchRealWorldItems();
+      setRealWorldItems(enrichedItems);
+
+      // Set default selectedItems (first 3 real items)
+      const realItems = enrichedItems.filter((item) => item.type !== "blank");
+
+      // Always set 3 selected items — fill nulls if fewer than 3 items
+      const defaultSelected = [
+        realItems[0] || null,
+        realItems[1] || null,
+        realItems[2] || null,
+      ];
+
+      setSelectedItems(defaultSelected);
+    };
+    if (categoryId) fetchRealWorldItems();
   }, [categoryId]);
 
   // Delegete to their respective category page
@@ -111,9 +126,19 @@ function Converter({ categoryId }) {
     const from = units.find((u) => u.id === fromUnit);
     const to = units.find((u) => u.id === toUnitId);
     if (!from || !to || !inputValue) return null;
+
     const input = parseFloat(inputValue);
-    const baseValue = input * from.to_base_factor;
-    return baseValue / to.to_base_factor;
+
+    // Safely handle numeric or object format
+    const fromFactor = parseFloat(
+      from.to_base_factor?.value ?? from.to_base_factor,
+    );
+    const toFactor = parseFloat(to.to_base_factor?.value ?? to.to_base_factor);
+
+    if (isNaN(fromFactor) || isNaN(toFactor)) return null;
+
+    const baseValue = input * fromFactor;
+    return baseValue / toFactor;
   };
 
   const getUnitById = (id) => units.find((u) => u.id === id);
@@ -239,11 +264,15 @@ function Converter({ categoryId }) {
 
                       {/* Result */}
                       <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px] flex items-center justify-center">
-                        {formatNumber(
-                          getConvertedValue(toUnitId),
-                          conversionToggles[index],
-                        )}{" "}
-                        {getUnitById(toUnitId)?.symbol || ""}
+                        {inputValue && getConvertedValue(toUnitId) !== null ? (
+                          <>
+                            {formatNumber(
+                              getConvertedValue(toUnitId),
+                              conversionToggles[index],
+                            )}{" "}
+                          </>
+                        ) : null}
+                        {currentUnit?.symbol || ""}
                       </div>
 
                       {/* Unit selection */}
