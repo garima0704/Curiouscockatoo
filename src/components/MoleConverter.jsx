@@ -205,14 +205,18 @@ function MoleConverter({ categoryId }) {
                         Scientific
                       </button>
                     </div>
-
+					
+					{/* Result */}
                     <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
-                      {formatNumber(
-                        getConvertedValue(toUnitId),
-                        conversionToggles[index],
-                      )}{" "}
-                      {currentUnit?.symbol}
-                    </div>
+						{getConvertedValue(toUnitId) !== null ? (
+							<>
+							{formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} {currentUnit?.symbol}
+							</>
+						) : (
+						currentUnit?.symbol || ""
+						)}
+					</div>
+				
                     <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">
                       {childUnits.map((u) => (
                         <div

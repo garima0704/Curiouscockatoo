@@ -251,12 +251,11 @@ useEffect(() => {
 
                 {/* Result */}
                 <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px] flex items-center justify-center">
-                  {formatNumber(
-                    getConvertedValue(toUnitId),
-                    conversionToggles[index],
-                  )}{" "}
-                  {getUnitById(toUnitId)?.symbol || ""}
-                </div>
+  {getConvertedValue(toUnitId) != null && !isNaN(getConvertedValue(toUnitId))
+    ? `${formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} ${getUnitById(toUnitId)?.symbol || ""}`
+    : getUnitById(toUnitId)?.symbol || ""}
+</div>
+
 
                 {/* Unit List */}
                 <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">
@@ -286,7 +285,7 @@ useEffect(() => {
 
       {/* Comparison Section */}
 		<div className="w-full text-center text-xl font-bold text-gray-700">
-            Conmparison
+            Comparison
           </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">	  
         {/* From Comparison Block */}

@@ -41,6 +41,9 @@ function RefractiveIndexConverter({ categoryId }) {
 
         const enrichedItems = distributeBlankCards(safeItems, 9);
         setRealWorldItems(enrichedItems);
+
+        // Set default selected items (e.g., first 3 items)
+        setSelectedItems(enrichedItems.slice(0, 3));
       } catch (err) {
         console.error("Failed to load real world items:", err);
       }
@@ -151,7 +154,6 @@ function RefractiveIndexConverter({ categoryId }) {
                     </div>
 
                     {/* Result Box */}
-                    {/* Result Box */}
                     <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
                       {selectedItem && inputValue && !error ? (
                         <>
@@ -162,7 +164,7 @@ function RefractiveIndexConverter({ categoryId }) {
                           Times
                         </>
                       ) : (
-                        "..."
+                        " "
                       )}
                     </div>
 
