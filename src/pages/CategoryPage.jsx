@@ -206,7 +206,12 @@ function CategoryPage({ categoryName }) {
                     <td className="px-4 py-2">{prefix.symbol}</td>
                     <td className="px-4 py-2">{prefix.multiplier}</td>
                     <td className="px-4 py-2 text-base">
-						{prefix.exponential?.replace(/"/g, "")}
+						<span className="flex items-center justify-center">
+							<span>10</span>
+							<sup className="text-2xl font-normal ml-0.5 relative -top-0.5">
+								{prefix.exponential.replace("10", "")}
+							</sup>
+						</span>
 					</td>
                     <td className="px-4 py-2 whitespace-pre-line">{prefix.description}</td>
                   </tr>
