@@ -121,14 +121,14 @@ function AuxiliaryConverter({ categoryId }) {
             }
           }}
           placeholder="Enter value"
-          className="border p-2 rounded w-40 text-gray-800"
+          className="border p-2 rounded w-full max-w-[160px] text-gray-800"
           style={{ backgroundColor: theme?.base }}
         />
 
         <select
           value={fromUnit}
           onChange={(e) => setFromUnit(e.target.value)}
-          className="border p-2 rounded w-48 text-gray-800"
+          className="border p-2 rounded w-full max-w-[200px] text-gray-800"
           style={{ backgroundColor: theme?.base }}
         >
           {units.map((u) => (
@@ -140,10 +140,10 @@ function AuxiliaryConverter({ categoryId }) {
       </div>
 
       {/* Conversion + Comparison Side-by-Side */}
-      <div className="flex gap-4 items-start">
+      <div className="flex flex-col sm:flex-row gap-4 items-start">
         {/* Conversion Box */}
         <div
-          className="w-1/2 p-4 rounded shadow h-[420px] flex flex-col text-gray-800"
+          className="w-full sm:w-1/2 p-4 rounded shadow h-[420px] flex flex-col text-gray-800"
           style={{ backgroundColor: theme?.box }}
         >
           <div className="text-center text-lg font-semibold mb-2">
@@ -172,7 +172,8 @@ function AuxiliaryConverter({ categoryId }) {
               Scientific
             </button>
           </div>
-          <div className="bg-gray-100 p-2 text-center font-bold text-base rounded mb-2 h-[45px] text-blue-700 flex items-center justify-center">
+		  {/* Result */}
+          <div className="bg-gray-100 p-2 text-center font-bold break-words text-sm sm:text-base rounded mb-2 h-[45px] text-blue-700 flex items-center justify-center">
             {toUnit ? (
               inputValue && !isNaN(inputValue) ? (
                 <>
@@ -205,7 +206,7 @@ function AuxiliaryConverter({ categoryId }) {
 
         {/* Comparison Box */}
         <div
-          className="w-1/2 p-4 rounded shadow h-[420px] flex flex-col text-gray-800"
+          className="w-full sm:w-1/2 p-4 rounded shadow h-[420px] flex flex-col text-gray-800"
           style={{ backgroundColor: theme?.box }}
         >
           <div className="text-center text-lg font-semibold mb-2">

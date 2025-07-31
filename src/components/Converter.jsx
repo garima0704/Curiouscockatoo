@@ -19,16 +19,8 @@ function Converter({ categoryId }) {
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
-  const [comparisonToggles, setComparisonToggles] = useState([
-    false,
-    false,
-    false,
-  ]);
-  const [conversionToggles, setConversionToggles] = useState([
-    false,
-    false,
-    false,
-  ]);
+  const [comparisonToggles, setComparisonToggles] = useState([false,false,false,]);
+  const [conversionToggles, setConversionToggles] = useState([false,false,false,]);
   const [categoryInfo, setCategoryInfo] = useState(null);
 
   useEffect(() => {
@@ -153,7 +145,7 @@ function Converter({ categoryId }) {
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 px-4 sm:px-6 lg:px-8">
       {categoryInfo?.top_notes && (
         <div
           className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded text-sm text-gray-800 mb-6"
@@ -215,12 +207,13 @@ function Converter({ categoryId }) {
                   return (
                     <div
                       key={index}
-                      className="p-4 rounded shadow flex flex-col gap-3"
+                      className="w-full p-4 rounded shadow flex flex-col gap-3"
                       style={{ backgroundColor: theme?.box }}
                     >
                       {/* Toggle buttons */}
                       <div className="flex justify-center gap-2">
                         <button
+                          aria-label="Switch to General view"
                           className={`px-3 py-1 rounded-l ${
                             !conversionToggles[index]
                               ? "text-white"
@@ -241,6 +234,7 @@ function Converter({ categoryId }) {
                           General
                         </button>
                         <button
+                          aria-label="Switch to Scientific view"
                           className={`px-3 py-1 rounded-r ${
                             conversionToggles[index]
                               ? "text-white"
@@ -263,16 +257,19 @@ function Converter({ categoryId }) {
                       </div>
 
                       {/* Result */}
-                      <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px] flex items-center justify-center">
-                        {inputValue && getConvertedValue(toUnitId) !== null ? (
-                          <>
-                            {formatNumber(
-                              getConvertedValue(toUnitId),
-                              conversionToggles[index],
-                            )}{" "}
-                          </>
-                        ) : null}
-                        {currentUnit?.symbol || ""}
+                      <div className="overflow-x-auto max-w-full">
+                        <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold break-words text-sm sm:text-base min-h-[48px] flex items-center justify-center">
+                          {inputValue &&
+                          getConvertedValue(toUnitId) !== null ? (
+                            <>
+                              {formatNumber(
+                                getConvertedValue(toUnitId),
+                                conversionToggles[index],
+                              )}{" "}
+                            </>
+                          ) : null}
+                          {currentUnit?.symbol || ""}
+                        </div>
                       </div>
 
                       {/* Unit selection */}
@@ -316,11 +313,12 @@ function Converter({ categoryId }) {
                 {selectedItems.map((selectedItem, index) => (
                   <div
                     key={index}
-                    className="p-4 rounded shadow flex flex-col gap-3"
+                    className="w-full p-4 rounded shadow flex flex-col gap-3"
                     style={{ backgroundColor: theme?.box }}
                   >
                     <div className="flex justify-center gap-2">
                       <button
+                        aria-label="Switch to General view"
                         className={`px-3 py-1 rounded-l ${
                           !comparisonToggles[index]
                             ? "text-white"
@@ -342,6 +340,7 @@ function Converter({ categoryId }) {
                       </button>
 
                       <button
+                        aria-label="Switch to Scientific view"
                         className={`px-3 py-1 rounded-r ${
                           comparisonToggles[index]
                             ? "text-white"
@@ -363,15 +362,19 @@ function Converter({ categoryId }) {
                       </button>
                     </div>
 
-                    <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
-                      {selectedItem && inputValue
-                        ? formatNumber(
-                            getComparisonValue(selectedItem),
-                            comparisonToggles[index],
-                          )
-                        : ""}
+                    {/* Result */}
+                    <div className="overflow-x-auto max-w-full">
+                      <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold break-words text-sm sm:text-base min-h-[48px] flex items-center justify-center">
+                        {selectedItem && inputValue
+                          ? formatNumber(
+                              getComparisonValue(selectedItem),
+                              comparisonToggles[index],
+                            )
+                          : ""}
+                      </div>
                     </div>
-                    <div className="h-[300px] overflow-y-auto pr-1">
+
+                    <div className="h-[300px] overflow-y-auto pr-1 sm:max-h-[none] max-h-[80vh]">
                       <RealWorldBox
                         selected={selectedItem}
                         setSelected={(val) =>

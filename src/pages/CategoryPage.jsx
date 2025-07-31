@@ -38,8 +38,8 @@ function CategoryPage({ categoryName }) {
         const auxiliary = Array.isArray(mainCategory.expand?.auxiliary)
           ? mainCategory.expand.auxiliary
           : mainCategory.expand?.auxiliary
-          ? [mainCategory.expand.auxiliary]
-          : [];
+            ? [mainCategory.expand.auxiliary]
+            : [];
 
         setAuxiliaryCategories(auxiliary);
         setError(null);
@@ -93,37 +93,28 @@ function CategoryPage({ categoryName }) {
 
       <main className="flex-grow px-6 pt-24 pb-10 max-w-7xl mx-auto space-y-16">
         {/* Category Heading */}
-        <div className="pt-10 px-0 pb-0"> {/* Increased top padding, removed bottom space */}
-  <h1
-    className="text-2xl sm:text-3xl font-bold text-left mb-2"
-    style={{ color: "#1e40af" }}
-  >
-    {category?.name}
-  </h1>
-</div>
+        <section className="px-4 sm:px-6 lg:px-8 pt-10 pb-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-left mb-2" style={{ color: "#1e40af" }}>
+            {category?.name}
+          </h1>
+        </section>
 
         {/* Auxiliary Section */}
         {total > 0 && (
-          <section className="-mt-6">
-            <h2
-              className="text-3xl font-bold mb-6 text-center"
-              style={{ color: theme?.primary }}
-            >
+          <section className="px-4 sm:px-6 lg:px-8 py-6 -mt-6">
+            <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: theme?.primary }}>
               Auxiliary Calculation
             </h2>
             <div className="grid gap-8 sm:grid-cols-2">
               {auxiliaryCategories.map((aux, index) => {
-                const isLastOdd =
-                  total % 2 === 1 && index === total - 1 && total > 1;
+                const isLastOdd = total % 2 === 1 && index === total - 1 && total > 1;
                 const isOnlyOne = total === 1;
 
                 return (
                   <div
                     key={aux.id}
                     className={`p-6 rounded-lg shadow hover:shadow-lg transition ${
-                      isLastOdd || isOnlyOne
-                        ? "sm:col-span-2 sm:mx-auto sm:w-1/2"
-                        : ""
+                      isLastOdd || isOnlyOne ? "sm:col-span-2 sm:mx-auto sm:w-1/2" : ""
                     }`}
                     style={{ backgroundColor: theme?.surface }}
                   >
@@ -139,17 +130,11 @@ function CategoryPage({ categoryName }) {
         )}
 
         {/* Main Converter */}
-        <section>
-          <h2
-            className="text-3xl font-bold mb-6 text-center"
-            style={{ color: theme?.primary }}
-          >
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: theme?.primary }}>
             Main Calculation
           </h2>
-          <div
-            className="p-6 rounded-lg shadow space-y-4"
-            style={{ backgroundColor: theme?.surface }}
-          >
+          <div className="p-6 rounded-lg shadow space-y-4" style={{ backgroundColor: theme?.surface }}>
             {topNote && (
               <div
                 className="prose max-w-none"
@@ -161,98 +146,56 @@ function CategoryPage({ categoryName }) {
         </section>
 
         {/* Fun Facts */}
-        <section>
-          <h2
-            className="text-3xl font-bold mb-6 text-center"
-            style={{ color: theme?.primary }}
-          >
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: theme?.primary }}>
             Fun Facts
           </h2>
-          <div
-            className="px-6 py-6 rounded-lg shadow"
-            style={{ backgroundColor: theme?.surface }}
-          >
+          <div className="px-6 py-6 rounded-lg shadow" style={{ backgroundColor: theme?.surface }}>
             <FunFacts categoryId={categoryId} />
           </div>
         </section>
 
         {/* Prefixes */}
-        <section>
-          <h2
-            className="text-3xl font-bold mb-6 text-center"
-            style={{ color: theme?.primary }}
-          >
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: theme?.primary }}>
             Prefixes
           </h2>
 
-          <div
-            className="hidden md:block rounded-lg shadow overflow-x-auto max-w-7xl mx-auto"
-            style={{ backgroundColor: theme?.surface }}
-          >
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <div className="rounded-lg shadow overflow-x-auto max-w-7xl mx-auto" style={{ backgroundColor: theme?.surface }}>
+            <table className="min-w-full divide-y divide-gray-200 text-sm table-fixed">
               <thead className="bg-gray-200 text-gray-800">
                 <tr>
-                  <th className="px-4 py-3 w-1/6 text-center font-semibold">Name</th>
-                  <th className="px-4 py-3 w-1/6 text-center font-semibold">Symbol</th>
-                  <th className="px-4 py-3 w-1/4 text-center font-semibold">Multiplier</th>
-                  <th className="px-4 py-3 w-1/6 text-center font-semibold">10ⁿ</th>
-                  <th className="px-4 py-3 w-1/6 text-center font-semibold">Description</th>
+                  <th className="px-4 py-3 w-[20%] text-center font-semibold">Name</th>
+                  <th className="px-4 py-3 w-[15%] text-center font-semibold">Symbol</th>
+                  <th className="px-4 py-3 w-[25%] text-center font-semibold">Multiplier</th>
+                  <th className="px-4 py-3 w-[15%] text-center font-semibold">10ⁿ</th>
+                  <th className="px-4 py-3 w-[25%] text-center font-semibold">Description</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-center">
                 {prefixes.map((prefix) => (
                   <tr key={prefix.id} className="odd:bg-gray-50">
-                    <td className="px-4 py-2">{prefix.name || prefix.prefix}</td>
-                    <td className="px-4 py-2">{prefix.symbol}</td>
-                    <td className="px-4 py-2">{prefix.multiplier}</td>
+                    <td className="px-4 py-2 break-words">{prefix.name || prefix.prefix}</td>
+                    <td className="px-4 py-2 break-words">{prefix.symbol}</td>
+                    <td className="px-4 py-2 break-words">{prefix.multiplier}</td>
                     <td className="px-4 py-2 text-base">
-						<span className="flex items-center justify-center">
-							<span>10</span>
-							<sup className="text-2xl font-normal ml-0.5 relative -top-0.5">
-								{prefix.exponential.replace("10", "")}
-							</sup>
-						</span>
-					</td>
-                    <td className="px-4 py-2 whitespace-pre-line">{prefix.description}</td>
+                      <span className="flex items-center justify-center">
+                        <span>10</span>
+                        <sup className="text-[1.5em] ml-0.5 font-normal leading-none relative -top-0.5">
+                          {prefix.exponential.replace("10", "")}
+                        </sup>
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 whitespace-pre-line break-words">{prefix.description}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-
-          <div className="md:hidden space-y-4 mt-4">
-            {prefixes.map((prefix) => (
-              <div
-                key={prefix.id}
-                className="p-4 rounded-md shadow-sm border border-gray-200"
-                style={{ backgroundColor: theme?.surface }}
-              >
-                <div className="font-semibold mb-1 text-center">
-                  {prefix.name || prefix.prefix}
-                </div>
-                <div className="text-sm text-center">
-                  <span className="font-medium">Symbol:</span> {prefix.symbol}
-                </div>
-                <div className="text-sm text-center">
-                  <span className="font-medium">Multiplier:</span> {prefix.multiplier}
-                </div>
-                <div className="text-sm text-center">
-                  <span className="font-medium">10ⁿ:</span> {prefix.exponential?.replace(/"/g, "")}
-                </div>
-                <div className="text-sm mt-1 whitespace-pre-line text-center">
-                  {prefix.description}
-                </div>
-              </div>
-            ))}
-          </div>
         </section>
       </main>
 
-      {/* Disclaimer Note */}
-      <div
-        className="text-sm px-4 py-3 mt-12 max-w-4xl mx-auto rounded"
-        style={{ backgroundColor: theme?.surface, color: theme?.text }}
-      >
+      <div className="text-sm px-4 py-3 mt-12 max-w-4xl mx-auto rounded" style={{ backgroundColor: theme?.surface, color: theme?.text }}>
         <strong>Note:</strong> Some comparison figures are based on approximations, mean values, or estimates. Check important information for accuracy.
       </div>
 

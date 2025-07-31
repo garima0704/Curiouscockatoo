@@ -69,40 +69,50 @@ export default function Home() {
     >
       <Header />
 
-      <main className="flex-grow px-4 max-w-6xl mx-auto pt-24 sm:pt-28">
-        {/* Tabs + Auxiliary Converter */}
-        <section className="mt-6 sm:mt-12">
-          <CategoryTabs
-            mainCategories={mainCategories}
-            active={activeMainCategory}
-            onChange={setActiveMainCategory}
-            theme={theme}
-          />
-          <div className="max-w-3xl mx-auto p-4 sm:p-6 rounded shadow" style={{ backgroundColor: theme?.surface }}>
-            {categoryId ? (
-              <AuxiliaryConverter categoryId={categoryId} />
-            ) : (
-              <p className="text-center text-gray-500">Loading converter...</p>
-            )}
-          </div>
-        </section>
+      <main className="flex-grow pt-24 sm:pt-28">
+        {/* Shared Container */}
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
 
-        {/* All Converters */}
-        <AllConverters allCategories={allCategories} theme={theme} />
+          {/* Tabs + Auxiliary Converter */}
+          <section>
+            <CategoryTabs
+              mainCategories={mainCategories}
+              active={activeMainCategory}
+              onChange={setActiveMainCategory}
+              theme={theme}
+            />
+            <div
+              className="w-full max-w-3xl mx-auto p-4 sm:p-6 rounded shadow"
+              style={{ backgroundColor: theme?.surface }}
+            >
+              {categoryId ? (
+                <AuxiliaryConverter categoryId={categoryId} />
+              ) : (
+                <p className="text-center text-gray-500">Loading converter...</p>
+              )}
+            </div>
+          </section>
 
-        {/* Contact Form */}
-        <ContactSection
-          formData={formData}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-          status={submitStatus}
-          theme={theme}
-        />
+          {/* All Converters */}
+          <section>
+            <AllConverters allCategories={allCategories} theme={theme} />
+          </section>
+
+          {/* Contact Form */}
+          <section>
+            <ContactSection
+              formData={formData}
+              onChange={handleChange}
+              onSubmit={handleSubmit}
+              status={submitStatus}
+              theme={theme}
+            />
+          </section>
+        </div>
       </main>
 
       {/* Footer Note */}
       <FooterNote theme={theme} />
-
       <Footer />
     </div>
   );

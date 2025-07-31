@@ -10,7 +10,7 @@ export default function Footer() {
       style={{
         backgroundColor: theme?.surface || "white",
         color: theme?.text || "#4B5563",
-        fontFamily: theme?.font || "inherit",
+        fontFamily: theme?.font_family_main || "'Poppins', sans-serif",
       }}
     >
       &copy; {new Date().getFullYear()} Curious Cockatoo. All rights reserved.

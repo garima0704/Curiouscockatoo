@@ -21,12 +21,12 @@ function RealWorldGrid({ items, inputValue }) {
             : null;
 
           return (
-            <div key={item.id} className="bg-white border rounded-lg p-4 shadow-sm">
-              <div className="text-xl font-bold text-blue-600 text-center mb-2">
+            <div key={item.id} className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
+              <div className="text-xl font-bold text-blue-600 text-center mb-2 min-h-[64px]">
                 {formatNumber(result)}
               </div>
               <div className="text-center font-semibold mb-1">{item.name}</div>
-              <div className="text-sm flex justify-between text-gray-600">
+              <div className="text-sm text-gray-600 flex justify-center gap-1">
                 <span>{formatNumber(item.scientific_value, true)}</span>
                 <span>{item.expand?.unit?.symbol}</span>
               </div>

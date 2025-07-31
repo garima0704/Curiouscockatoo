@@ -87,23 +87,17 @@ function RealWorldBox({
               if (e.key === "Enter" || e.key === " ") setSelected?.(item);
             }}
             className={`cursor-pointer border pt-3 pb-1 px-3 rounded shadow-sm ${
-              isSelected ? "bg-blue-50 border-blue-400" : "bg-white"
+              isSelected
+                ? "bg-blue-50 border-blue-400"
+                : "bg-white hover:bg-gray-50"
             }`}
           >
-            <div className="font-semibold text-blue-800 text-center">
+            <div className="font-semibold text-blue-800 text-center text-sm md:text-base">
               {item.name}
             </div>
-            <div className="mt-1 text-center text-blue-600 font-mono text-base">
-              {item.expression ? (
-                <span dangerouslySetInnerHTML={{ __html: item.expression }} />
-              ) : item.approx_value != null ? (
-                <>
-                  {formatNumber(item.approx_value, false, true)}{" "}
-                  {item?.expand?.unit?.symbol || ""}
-                </>
-              ) : (
-                "—"
-              )}
+
+            <div className="mt-1 text-center text-blue-600 font-mono text-sm md:text-base">
+              {displayValue}
             </div>
 
             {item.notes && (

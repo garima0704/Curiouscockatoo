@@ -27,13 +27,13 @@ export default function Header() {
   }}
 >
   <div className="max-w-7xl mx-auto px-6 flex justify-start items-center">
-    <Link to="/">
+    <Link to="/" aria-label="Go to homepage">
       {theme?.logo ? (
         <img
-          src={theme.logo}
-          alt="Logo"
-          className="h-11 sm:h-14 md:h-16 object-contain transition-all"
-        />
+			src={theme.logo}
+			alt="Logo"
+			className="h-12 sm:h-14 md:h-16 object-contain transition-all"
+		/>
       ) : (
         <h1
           className="text-xl sm:text-2xl font-bold"

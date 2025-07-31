@@ -23,8 +23,10 @@ function FunFacts({ categoryId }) {
   if (!text) return null;
 
   return (
-  <div className="prose prose-sm max-w-none text-gray-800 [&_sup]:text-[0.75rem] [&_sup]:font-semibold [&_sup]:leading-none">
-    <div dangerouslySetInnerHTML={{ __html: text }} />
+  <div className="p-4 sm:p-6">
+    <div className="prose prose-sm max-w-none text-gray-800 break-words [&_sup]:text-[0.75rem] [&_sup]:font-semibold [&_sup]:leading-none">
+      <div dangerouslySetInnerHTML={{ __html: text }} />
+    </div>
   </div>
 );
 

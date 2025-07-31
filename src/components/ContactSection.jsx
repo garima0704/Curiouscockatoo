@@ -49,8 +49,9 @@ export default function ContactSection({ formData, onChange, onSubmit, status, t
             ></textarea>
             <button
               type="submit"
-              className="text-white px-6 py-2 rounded w-full"
+              className="text-white px-4 sm:px-6 py-2 rounded w-full min-h-[44px]"
               style={{ backgroundColor: theme?.primary }}
+			  aria-label="Send your message"
             >
               Send Message
             </button>
