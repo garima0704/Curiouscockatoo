@@ -4,6 +4,7 @@ import RealWorldBox from "./RealWorldBox";
 import { useTheme } from "../context/ThemeContext";
 import { formatNumber } from "../utils/formatNumber";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
+import FooterNote from "./FooterNote";
 
 function RefractiveIndexConverter({ categoryId }) {
   const theme = useTheme();
@@ -64,9 +65,6 @@ function RefractiveIndexConverter({ categoryId }) {
         {/* Input Section (Left Side) */}
         <div className="w-full lg:w-1/4 flex items-center justify-center">
           <div className="flex flex-col items-center justify-center w-full">
-            <label className="font-semibold text-lg text-center mb-4">
-              From
-            </label>
             <input
               type="text"
               inputMode="decimal"
@@ -183,6 +181,10 @@ function RefractiveIndexConverter({ categoryId }) {
                     </div>
                   </div>
                 ))}
+              </div>
+              {/* Footer note goes here */}
+              <div className="col-span-full mt-2">
+                <FooterNote theme={theme} />
               </div>
             </>
           )}

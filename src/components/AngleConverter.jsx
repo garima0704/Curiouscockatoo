@@ -4,7 +4,8 @@ import AngleRealWorldBox from "./AngleRealWorldBox";
 import { formatNumber } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
-import { angleUnits } from "../data/angleUnits"; 
+import { angleUnits } from "../data/angleUnits";
+import FooterNote from "./FooterNote";
 
 function AngleConverter({ categoryId }) {
   const theme = useTheme();
@@ -72,51 +73,50 @@ function AngleConverter({ categoryId }) {
     fetchUnits();
   }, [categoryId]);
 
-useEffect(() => {
-  const fetchRealWorldItems = async () => {
-    if (!fromComparisonUnit) return;
+  useEffect(() => {
+    const fetchRealWorldItems = async () => {
+      if (!fromComparisonUnit) return;
 
-    const items = await pb.collection("realworld_items").getFullList({
-      filter: `category = "${categoryId}"`,
-    });
+      const items = await pb.collection("realworld_items").getFullList({
+        filter: `category = "${categoryId}"`,
+      });
 
-    const safeItems = items.filter(
-      (item) =>
-        item.distance_unit &&
-        angleUnits.some((u) => u.symbol === item.distance_unit)
-    );
+      const safeItems = items.filter(
+        (item) =>
+          item.distance_unit &&
+          angleUnits.some((u) => u.symbol === item.distance_unit),
+      );
 
-    const getVal = (item) => {
-  const fromUnit = angleUnits.find((u) => u.symbol === item.distance_unit);
-  const val = parseFloat(item.distance_value);
+      const getVal = (item) => {
+        const fromUnit = angleUnits.find(
+          (u) => u.symbol === item.distance_unit,
+        );
+        const val = parseFloat(item.distance_value);
 
-  if (!fromUnit || isNaN(val)) {
-    console.warn(`SKIPPED: ${item.distance_value} ${item.distance_unit}`);
-    return Infinity;
-  }
+        if (!fromUnit || isNaN(val)) {
+          console.warn(`SKIPPED: ${item.distance_value} ${item.distance_unit}`);
+          return Infinity;
+        }
 
-  const converted = val * fromUnit.to_base_factor;
-  console.log(`ITEM: ${val} ${fromUnit.symbol} → ${converted} m`);
-  return converted;
-};
+        const converted = val * fromUnit.to_base_factor;
+        console.log(`ITEM: ${val} ${fromUnit.symbol} → ${converted} m`);
+        return converted;
+      };
 
+      const sortedItems = [...safeItems].sort((a, b) => getVal(a) - getVal(b));
 
-    const sortedItems = [...safeItems].sort((a, b) => getVal(a) - getVal(b));
+      setRealWorldItems(sortedItems);
 
-    setRealWorldItems(sortedItems);
+      setSelectedItems(
+        sortedItems.slice(0, 3).map((item) => ({
+          distance_value: item.distance_value,
+          distance_unit: item.distance_unit,
+        })),
+      );
+    };
 
-    setSelectedItems(
-      sortedItems.slice(0, 3).map((item) => ({
-        distance_value: item.distance_value,
-        distance_unit: item.distance_unit,
-      }))
-    );
-  };
-
-  fetchRealWorldItems();
-}, [fromComparisonUnit, categoryId]);
-
-
+    fetchRealWorldItems();
+  }, [fromComparisonUnit, categoryId]);
 
   const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromConversionUnit);
@@ -155,11 +155,7 @@ useEffect(() => {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
             {/* From Block */}
-            <div className="flex flex-col items-start justify-start gap-3 bg-white p-4 rounded-xl shadow">
-              <div className="w-full flex justify-center">
-                <label className="font-semibold text-lg">From</label>
-              </div>
-
+            <div className="flex flex-col items-start justify-start gap-3 bg-white p-4 rounded shadow">
               <input
                 type="text"
                 value={
@@ -251,11 +247,11 @@ useEffect(() => {
 
                 {/* Result */}
                 <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px] flex items-center justify-center">
-  {getConvertedValue(toUnitId) != null && !isNaN(getConvertedValue(toUnitId))
-    ? `${formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} ${getUnitById(toUnitId)?.symbol || ""}`
-    : getUnitById(toUnitId)?.symbol || ""}
-</div>
-
+                  {getConvertedValue(toUnitId) != null &&
+                  !isNaN(getConvertedValue(toUnitId))
+                    ? `${formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} ${getUnitById(toUnitId)?.symbol || ""}`
+                    : getUnitById(toUnitId)?.symbol || ""}
+                </div>
 
                 {/* Unit List */}
                 <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">
@@ -284,16 +280,12 @@ useEffect(() => {
       )}
 
       {/* Comparison Section */}
-		<div className="w-full text-center text-xl font-bold text-gray-700">
-            Comparison
-          </div>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">	  
+      <div className="w-full text-center text-xl font-bold text-gray-700">
+        Comparison
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
         {/* From Comparison Block */}
-        <div className="flex flex-col items-start justify-start gap-3 bg-white p-4 rounded-xl shadow">
-          <div className="w-full flex justify-center">
-            <label className="font-semibold text-lg">From</label>
-          </div>
-
+        <div className="flex flex-col items-start justify-start gap-3 bg-white p-4 rounded shadow">
           <select
             value={comparisonValue}
             onChange={(e) => setComparisonValue(e.target.value)}
@@ -333,7 +325,7 @@ useEffect(() => {
           return (
             <div
               key={index}
-              className="p-4 rounded-xl shadow flex flex-col gap-3"
+              className="p-4 rounded shadow flex flex-col gap-3"
               style={{ backgroundColor: theme?.box }}
             >
               {/* Toggle Buttons */}
@@ -383,12 +375,11 @@ useEffect(() => {
               {/* Result */}
 
               <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px] flex flex-col items-center justify-center leading-snug">
-  <div>{matchedItem?.arc_length_value || "No Match"}</div>
-  <div className="text-sm text-gray-600 font-medium">
-    {matchedItem?.name || ""}
-  </div>
-</div>
-
+                <div>{matchedItem?.arc_length_value || "No Match"}</div>
+                <div className="text-sm text-gray-600 font-medium">
+                  {matchedItem?.name || ""}
+                </div>
+              </div>
 
               {/* Real World Selector */}
               <div className="text-sm">
@@ -400,19 +391,22 @@ useEffect(() => {
                   unitSymbol={selectedItem?.distance_unit || ""}
                   index={index}
                   handleComparisonDropdownChange={(boxIndex, selectedItem) => {
-  const updated = [...selectedItems];
-  updated[boxIndex] = {
-    distance_value: selectedItem.distance_value,
-    distance_unit: selectedItem.distance_unit,
-  };
-  setSelectedItems(updated);
-}}
-
+                    const updated = [...selectedItems];
+                    updated[boxIndex] = {
+                      distance_value: selectedItem.distance_value,
+                      distance_unit: selectedItem.distance_unit,
+                    };
+                    setSelectedItems(updated);
+                  }}
                 />
               </div>
             </div>
           );
         })}
+        {/* Footer note goes here */}
+        <div className="col-span-full mt-2">
+          <FooterNote theme={theme} />
+        </div>
       </div>
     </div>
   );

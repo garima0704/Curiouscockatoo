@@ -8,6 +8,7 @@ import MoleConverter from "./MoleConverter";
 import RefractiveIndexConverter from "./RefractiveIndexConverter";
 import AngleConverter from "./AngleConverter";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
+import FooterNote from "./FooterNote";
 
 function Converter({ categoryId }) {
   const theme = useTheme();
@@ -19,8 +20,16 @@ function Converter({ categoryId }) {
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
-  const [comparisonToggles, setComparisonToggles] = useState([false,false,false,]);
-  const [conversionToggles, setConversionToggles] = useState([false,false,false,]);
+  const [comparisonToggles, setComparisonToggles] = useState([
+    false,
+    false,
+    false,
+  ]);
+  const [conversionToggles, setConversionToggles] = useState([
+    false,
+    false,
+    false,
+  ]);
   const [categoryInfo, setCategoryInfo] = useState(null);
 
   useEffect(() => {
@@ -136,12 +145,23 @@ function Converter({ categoryId }) {
   const getUnitById = (id) => units.find((u) => u.id === id);
 
   const getComparisonValue = (item) => {
-    if (!item || !item.approx_value || !inputValue) return null;
+    if (!item || !inputValue) return null;
+
     const from = units.find((u) => u.id === fromUnit);
     if (!from) return null;
+
     const input = parseFloat(inputValue);
     const baseValue = input * from.to_base_factor;
-    return baseValue / item.approx_value;
+
+    // Use fallback logic: expression_value > approx_value > scientific_value
+    const comparisonValueRaw =
+      (item.expression_value && parseFloat(item.expression_value)) ||
+      (item.approx_value && parseFloat(item.approx_value)) ||
+      (item.scientific_value && parseFloat(item.scientific_value));
+
+    if (!comparisonValueRaw || isNaN(comparisonValueRaw)) return null;
+
+    return baseValue / comparisonValueRaw;
   };
 
   return (
@@ -155,7 +175,6 @@ function Converter({ categoryId }) {
 
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
-          <label className="font-semibold text-lg">From</label>
           <div className="relative w-full">
             <input
               type="text"
@@ -388,6 +407,10 @@ function Converter({ categoryId }) {
                     </div>
                   </div>
                 ))}
+              </div>
+              {/* Footer note goes here */}
+              <div className="mt-4">
+                <FooterNote theme={theme} />
               </div>
             </div>
           )}

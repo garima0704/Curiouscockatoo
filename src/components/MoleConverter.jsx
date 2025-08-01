@@ -4,6 +4,7 @@ import pb from "../utils/pocketbaseClient";
 import { formatNumber } from "../utils/formatNumber";
 import { parseScientific } from "../utils/parseScientific";
 import { useTheme } from "../context/ThemeContext";
+import FooterNote from "./FooterNote";
 
 function MoleConverter({ categoryId }) {
   const theme = useTheme();
@@ -106,7 +107,6 @@ function MoleConverter({ categoryId }) {
 
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
-          <label className="font-semibold text-lg">From</label>
           <div className="relative w-full">
             <input
               type="text"
@@ -205,18 +205,22 @@ function MoleConverter({ categoryId }) {
                         Scientific
                       </button>
                     </div>
-					
-					{/* Result */}
+
+                    {/* Result */}
                     <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
-						{getConvertedValue(toUnitId) !== null ? (
-							<>
-							{formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} {currentUnit?.symbol}
-							</>
-						) : (
-						currentUnit?.symbol || ""
-						)}
-					</div>
-				
+                      {getConvertedValue(toUnitId) !== null ? (
+                        <>
+                          {formatNumber(
+                            getConvertedValue(toUnitId),
+                            conversionToggles[index],
+                          )}{" "}
+                          {currentUnit?.symbol}
+                        </>
+                      ) : (
+                        currentUnit?.symbol || ""
+                      )}
+                    </div>
+
                     <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">
                       {childUnits.map((u) => (
                         <div
@@ -237,6 +241,10 @@ function MoleConverter({ categoryId }) {
                   </div>
                 );
               })}
+            </div>
+            {/* Footer note goes here */}
+            <div className="mt-4">
+              <FooterNote theme={theme} />
             </div>
           </div>
         </div>

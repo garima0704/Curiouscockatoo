@@ -54,23 +54,19 @@ function RealWorldBox({
 
         const displayValue = item.expression ? (
           <span dangerouslySetInnerHTML={{ __html: item.expression }} />
-        ) : scientificToggle ? (
-          parsedScientific != null ? (
-            <>
-              {formatNumber(parsedScientific, true)}{" "}
-              {item?.expand?.unit?.symbol || ""}
-            </>
-          ) : parsedApprox != null ? (
-            <>
-              {formatNumber(parsedApprox, false, true)}{" "}
-              {item?.expand?.unit?.symbol || ""}
-            </>
-          ) : (
-            "..."
-          )
-        ) : parsedApprox != null ? (
+        ) : item.approx_value != null ? (
           <>
-            {formatNumber(parsedApprox, false, true)}{" "}
+            {(typeof item.approx_value === "number" ||
+              !isNaN(item.approx_value)) &&
+            String(item.approx_value).length <= 6 &&
+            !String(item.approx_value).includes("e")
+              ? Number(item.approx_value).toLocaleString("en-US")
+              : formatNumber(item.approx_value, true)}{" "}
+            {item?.expand?.unit?.symbol || ""}
+          </>
+        ) : item.scientific_value != null ? (
+          <>
+            {formatNumber(item.scientific_value, true)}{" "}
             {item?.expand?.unit?.symbol || ""}
           </>
         ) : (

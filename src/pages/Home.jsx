@@ -70,8 +70,9 @@ export default function Home() {
       <Header />
 
       <main className="flex-grow pt-24 sm:pt-28">
+	  
         {/* Shared Container */}
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
 
           {/* Tabs + Auxiliary Converter */}
           <section>
@@ -110,9 +111,7 @@ export default function Home() {
           </section>
         </div>
       </main>
-
-      {/* Footer Note */}
-      <FooterNote theme={theme} />
+	  
       <Footer />
     </div>
   );
