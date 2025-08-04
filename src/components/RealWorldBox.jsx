@@ -61,12 +61,12 @@ function RealWorldBox({
               String(item.approx_value).includes("e"), // only scientific if needed
               true,
             )}{" "}
-            {item?.expand?.unit?.symbol || ""}
+            <span className="unit-symbol">{item?.expand?.unit?.symbol || ""}</span>
           </>
         ) : item.scientific_value != null ? (
           <>
             {formatNumber(item.scientific_value, scientificToggle)}{" "}
-            {item?.expand?.unit?.symbol || ""}
+            <span className="unit-symbol">{item?.expand?.unit?.symbol}</span>
           </>
         ) : (
           "..."
@@ -81,7 +81,7 @@ function RealWorldBox({
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") setSelected?.(item);
             }}
-            className={`cursor-pointer border pt-3 pb-1 px-3 rounded shadow-sm w-full max-w-full overflow-hidden ${
+            className={`cursor-pointer border pt-3 pb-1 px-3 rounded shadow-sm w-full max-w-full overflow-visible ${
               isSelected
                 ? "bg-blue-50 border-blue-400"
                 : "bg-white hover:bg-gray-50"
@@ -91,7 +91,7 @@ function RealWorldBox({
               {item.name}
             </div>
 
-            <div className="mt-1 text-center text-blue-600 font-mono text-sm md:text-base break-all leading-[1.8] py-1 overflow-visible">
+            <div className="mt-2 text-center text-blue-600 font-mono text-sm md:text-base break-all leading-[2] py-2 overflow-visible">
               {displayValue}
             </div>
 

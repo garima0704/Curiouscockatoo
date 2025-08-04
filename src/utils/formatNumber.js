@@ -34,22 +34,24 @@ export function formatNumber(value, forceScientific = false, approx = false) {
 
   const absVal = Math.abs(value);
 
-  // Only use scientific format if toggle is ON
+  // Use scientific format only if toggle is ON
   if (forceScientific) {
     const [base, expRaw] = Number(value).toExponential(2).split("e");
     const exp = expRaw.replace("+", "");
     return (
-      <>
-        {base} × 10<sup style={{ fontSize: "1.1em" }}>{toSuperscript(exp)}</sup>
-      </>
+      <span className="inline-exponent">
+        {base}&nbsp;×&nbsp;10
+        <sup className="exponent-sup">{toSuperscript(exp)}</sup>
+      </span>
     );
   }
 
-  // Always use normal format (even for small/large values)
+  // Normal (general) number formatting
   return approx
     ? Number(value).toLocaleString(undefined, { maximumFractionDigits: 6 })
     : Number(value).toLocaleString();
 }
+
 
 // For dropdown or plain text
 export function formatNumberString(

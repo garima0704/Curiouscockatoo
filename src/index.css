@@ -21,4 +21,26 @@ body {
   white-space: normal;
 }
 
+.inline-exponent {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.exponent-sup {
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 1.3em;               
+  vertical-align: super;          
+  line-height: 1;
+  white-space: nowrap;
+  margin-left: 2px;
+}
+
+.unit-symbol {
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+
+
 
