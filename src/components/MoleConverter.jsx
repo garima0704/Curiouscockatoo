@@ -148,10 +148,10 @@ function MoleConverter({ categoryId }) {
         </div>
 
         <div className="flex-1 space-y-10">
-          {/* Conversion Section */}
+          {/* Comparison Section */}
           <div>
             <div className="text-center text-xl font-bold text-gray-700 mb-2">
-              Conversion
+              Volume Comparison
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {selectedUnits.map((toUnitId, index) => {
@@ -208,17 +208,19 @@ function MoleConverter({ categoryId }) {
 
                     {/* Result */}
                     <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
-                      {getConvertedValue(toUnitId) !== null ? (
-                        <>
-                          {formatNumber(
-                            getConvertedValue(toUnitId),
-                            conversionToggles[index],
-                          )}{" "}
-                          {currentUnit?.symbol}
-                        </>
-                      ) : (
-                        currentUnit?.symbol || ""
-                      )}
+                      <div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug w-full">
+                        {getConvertedValue(toUnitId) !== null ? (
+                          <>
+                            {formatNumber(
+                              getConvertedValue(toUnitId),
+                              conversionToggles[index],
+                            )}{" "}
+                            {currentUnit?.symbol}
+                          </>
+                        ) : (
+                          currentUnit?.symbol || ""
+                        )}
+                      </div>
                     </div>
 
                     <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">

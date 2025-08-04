@@ -56,17 +56,16 @@ function RealWorldBox({
           <span dangerouslySetInnerHTML={{ __html: item.expression }} />
         ) : item.approx_value != null ? (
           <>
-            {(typeof item.approx_value === "number" ||
-              !isNaN(item.approx_value)) &&
-            String(item.approx_value).length <= 6 &&
-            !String(item.approx_value).includes("e")
-              ? Number(item.approx_value).toLocaleString("en-US")
-              : formatNumber(item.approx_value, true)}{" "}
+            {formatNumber(
+              item.approx_value,
+              String(item.approx_value).includes("e"), // only scientific if needed
+              true,
+            )}{" "}
             {item?.expand?.unit?.symbol || ""}
           </>
         ) : item.scientific_value != null ? (
           <>
-            {formatNumber(item.scientific_value, true)}{" "}
+            {formatNumber(item.scientific_value, scientificToggle)}{" "}
             {item?.expand?.unit?.symbol || ""}
           </>
         ) : (
@@ -82,7 +81,7 @@ function RealWorldBox({
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") setSelected?.(item);
             }}
-            className={`cursor-pointer border pt-3 pb-1 px-3 rounded shadow-sm ${
+            className={`cursor-pointer border pt-3 pb-1 px-3 rounded shadow-sm w-full max-w-full overflow-hidden ${
               isSelected
                 ? "bg-blue-50 border-blue-400"
                 : "bg-white hover:bg-gray-50"
@@ -92,7 +91,7 @@ function RealWorldBox({
               {item.name}
             </div>
 
-            <div className="mt-1 text-center text-blue-600 font-mono text-sm md:text-base">
+            <div className="mt-1 text-center text-blue-600 font-mono text-sm md:text-base break-all leading-[1.8] py-1 overflow-visible">
               {displayValue}
             </div>
 

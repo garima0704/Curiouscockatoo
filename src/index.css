@@ -14,3 +14,11 @@ body {
   box-sizing: border-box;
 }
 
+/* Custom utility to break long numbers and scientific notation */
+.break-super {
+  word-break: break-word;
+  overflow-wrap: anywhere; /* better for breaking numbers mid-string */
+  white-space: normal;
+}
+
+

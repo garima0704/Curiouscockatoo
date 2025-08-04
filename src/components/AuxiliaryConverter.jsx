@@ -100,7 +100,10 @@ function AuxiliaryConverter({ categoryId }) {
   };
 
   return (
-    <div className="flex flex-col gap-6 overflow-x-hidden" style={{ fontFamily: theme?.font }}>
+    <div
+      className="flex flex-col gap-6 overflow-x-hidden"
+      style={{ fontFamily: theme?.font }}
+    >
       {/* Input Block */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <input
@@ -149,8 +152,8 @@ function AuxiliaryConverter({ categoryId }) {
           <div className="text-center text-lg font-semibold mb-2">
             Conversion
           </div>
-		  
-			{/* Toggle Buttons */}
+
+          {/* Toggle Buttons */}
           <div className="flex justify-center gap-2 mb-2">
             <button
               className={`px-4 py-1 rounded-l ${!conversionToggle ? "text-white" : "text-black border"}`}
@@ -173,9 +176,9 @@ function AuxiliaryConverter({ categoryId }) {
               Scientific
             </button>
           </div>
-		  
-		  {/* Result */}
-          <div className="bg-gray-100 p-2 text-center font-bold break-words text-sm sm:text-base rounded mb-2 h-[45px] text-blue-700 flex items-center justify-center">
+
+          {/* Result */}
+          <div className="bg-gray-100 p-2 text-center font-bold text-sm sm:text-base rounded mb-2 min-h-[48px] text-blue-700 flex items-center justify-center whitespace-normal break-words break-all overflow-hidden max-w-full">
             {toUnit ? (
               inputValue && !isNaN(inputValue) ? (
                 <>
@@ -236,7 +239,7 @@ function AuxiliaryConverter({ categoryId }) {
               Scientific
             </button>
           </div>
-          <div className="bg-gray-100 p-2 text-center font-bold text-base rounded mb-2 h-[45px] text-blue-700 flex items-center justify-center">
+          <div className="bg-gray-100 p-2 text-center font-bold text-sm sm:text-base rounded mb-2 min-h-[48px] text-blue-700 flex items-center justify-center whitespace-normal break-words break-all overflow-hidden max-w-full">
             {selectedItem && inputValue && !isNaN(getComparisonValue()) ? (
               <>
                 {formatNumber(getComparisonValue(), comparisonToggle)}{" "}

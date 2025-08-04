@@ -277,7 +277,8 @@ function Converter({ categoryId }) {
 
                       {/* Result */}
                       <div className="overflow-x-auto max-w-full">
-                        <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold break-words text-sm sm:text-base min-h-[48px] flex items-center justify-center">
+                        <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
+							<div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
                           {inputValue &&
                           getConvertedValue(toUnitId) !== null ? (
                             <>
@@ -288,6 +289,7 @@ function Converter({ categoryId }) {
                             </>
                           ) : null}
                           {currentUnit?.symbol || ""}
+						 </div>
                         </div>
                       </div>
 
@@ -383,13 +385,15 @@ function Converter({ categoryId }) {
 
                     {/* Result */}
                     <div className="overflow-x-auto max-w-full">
-                      <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold break-words text-sm sm:text-base min-h-[48px] flex items-center justify-center">
-                        {selectedItem && inputValue
+                      <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
+                        <div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
+						{selectedItem && inputValue
                           ? formatNumber(
                               getComparisonValue(selectedItem),
                               comparisonToggles[index],
                             )
                           : ""}
+						</div>
                       </div>
                     </div>
 
