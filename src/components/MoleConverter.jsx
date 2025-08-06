@@ -217,14 +217,24 @@ function MoleConverter({ categoryId }) {
                 {children.map((u) => (
                   <div
                     key={u.id}
-                    className={`cursor-pointer p-1 hover:bg-blue-100 ${toUnitId === u.id ? "bg-blue-200 font-medium" : ""}`}
+                    className={`cursor-pointer p-1 hover:bg-blue-100 ${
+                      toUnitId === u.id ? "bg-blue-200 font-medium" : ""
+                    }`}
                     onClick={() =>
                       setSelectedUnits((prev) =>
                         prev.map((id, i) => (i === index ? u.id : id)),
                       )
                     }
                   >
-                    {u.name} ({u.symbol})
+                    <div>
+                      {u.name} ({u.symbol})
+                    </div>
+                    {u.unit_notes && (
+                      <div
+                        className="text-gray-600 text-xs list-disc list-inside pl-4"
+                        dangerouslySetInnerHTML={{ __html: u.unit_notes }}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
