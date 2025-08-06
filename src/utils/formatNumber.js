@@ -44,7 +44,7 @@ export function formatNumber(value, forceScientific = false, approx = false) {
   }
 
   return Number(value).toLocaleString(undefined, {
-    maximumFractionDigits: approx ? 6 : 20,
+    maximumFractionDigits: approx ? 9 : 20,
     minimumFractionDigits: 0,
   });
 }
@@ -67,7 +67,7 @@ export function formatNumberString(
   }
 
   return num.toLocaleString(undefined, {
-    maximumFractionDigits: approx ? 6 : 20,
+    maximumFractionDigits: approx ? 9 : 20,
     minimumFractionDigits: 0,
   });
 }
