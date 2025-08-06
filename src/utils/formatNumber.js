@@ -32,9 +32,6 @@ function toSuperscriptString(exp) {
 export function formatNumber(value, forceScientific = false, approx = false) {
   if (value == null || isNaN(value)) return "...";
 
-  const absVal = Math.abs(value);
-
-  // Use scientific format only if toggle is ON
   if (forceScientific) {
     const [base, expRaw] = Number(value).toExponential(2).split("e");
     const exp = expRaw.replace("+", "");
@@ -46,12 +43,11 @@ export function formatNumber(value, forceScientific = false, approx = false) {
     );
   }
 
-  // Normal (general) number formatting
-  return approx
-    ? Number(value).toLocaleString(undefined, { maximumFractionDigits: 6 })
-    : Number(value).toLocaleString();
+  return Number(value).toLocaleString(undefined, {
+    maximumFractionDigits: approx ? 6 : 20,
+    minimumFractionDigits: 0,
+  });
 }
-
 
 // For dropdown or plain text
 export function formatNumberString(
@@ -62,20 +58,18 @@ export function formatNumberString(
   if (value == null) return "...";
 
   const num = Number(value);
-  const absVal = Math.abs(num);
+  if (isNaN(num)) return "...";
 
-  const shouldUseScientific = forceScientific;
-
-  if (shouldUseScientific) {
+  if (forceScientific) {
     const [base, expRaw] = num.toExponential(2).split("e");
     const exp = expRaw.replace("+", "");
     return `${base} × 10${toSuperscriptString(exp)}`;
   }
 
-  // Return normal format
-  return approx
-    ? num.toLocaleString(undefined, { maximumFractionDigits: 6 })
-    : num.toLocaleString();
+  return num.toLocaleString(undefined, {
+    maximumFractionDigits: approx ? 6 : 20,
+    minimumFractionDigits: 0,
+  });
 }
 
 // Convert a string like "1e-12" to "1 × 10⁻¹²"

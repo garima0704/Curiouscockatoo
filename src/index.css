@@ -34,6 +34,8 @@ body {
   line-height: 1;
   white-space: nowrap;
   margin-left: 2px;
+  position: relative;
+  top: -0.3em; 
 }
 
 .unit-symbol {

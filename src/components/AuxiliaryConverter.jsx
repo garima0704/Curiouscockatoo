@@ -239,11 +239,11 @@ function AuxiliaryConverter({ categoryId }) {
               Scientific
             </button>
           </div>
+		  {/* Comparison Result */}
           <div className="bg-gray-100 p-2 text-center font-bold text-sm sm:text-base rounded mb-2 min-h-[48px] text-blue-700 flex items-center justify-center whitespace-normal break-words break-all overflow-hidden max-w-full">
             {selectedItem && inputValue && !isNaN(getComparisonValue()) ? (
               <>
                 {formatNumber(getComparisonValue(), comparisonToggle)}{" "}
-                {selectedItem?.expand?.unit?.symbol || ""}
               </>
             ) : (
               ""

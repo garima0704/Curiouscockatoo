@@ -158,8 +158,7 @@ function RefractiveIndexConverter({ categoryId }) {
                           {formatNumber(
                             getComparisonValue(selectedItem),
                             comparisonToggles[index],
-                          )}{" "}
-                          Times
+                          )}
                         </>
                       ) : (
                         " "

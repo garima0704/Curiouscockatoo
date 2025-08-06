@@ -1,4 +1,4 @@
-// MoleConverter.jsx (Conversion Only)
+// MoleConverter.jsx (Refined Version)
 import React, { useEffect, useState } from "react";
 import pb from "../utils/pocketbaseClient";
 import { formatNumber } from "../utils/formatNumber";
@@ -9,11 +9,11 @@ import FooterNote from "./FooterNote";
 function MoleConverter({ categoryId }) {
   const theme = useTheme();
   const primaryColor = theme?.primary || "#2b66e6";
-  const [inputValue, setInputValue] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
-  const [fromUnit, setFromUnit] = useState("");
-  const [childUnits, setChildUnits] = useState([]);
-  const [selectedUnits, setSelectedUnits] = useState([]);
+
+  const [inputValues, setInputValues] = useState(["", "", ""]);
+  const [fromUnits, setFromUnits] = useState([null, null, null]);
+  const [childUnits, setChildUnits] = useState([[], [], []]);
+  const [selectedUnits, setSelectedUnits] = useState([null, null, null]);
   const [conversionToggles, setConversionToggles] = useState([
     false,
     false,
@@ -22,8 +22,25 @@ function MoleConverter({ categoryId }) {
   const [categoryInfo, setCategoryInfo] = useState(null);
   const [units, setUnits] = useState([]);
   const [topUnits, setTopUnits] = useState([]);
+  const [isChildLoading, setIsChildLoading] = useState(false);
+
+  const assignedParentUnitIds = topUnits.slice(0, 3).map((u) => u.id);
+
+  const handleInputChange = (index, value) => {
+    const updated = [...inputValues];
+    updated[index] = value;
+    setInputValues(updated);
+  };
+
+  const handleFromUnitChange = (index, unitId) => {
+    const updated = [...fromUnits];
+    updated[index] = unitId;
+    setFromUnits(updated);
+  };
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchData = async () => {
       const [fetchedUnits, category] = await Promise.all([
         pb
@@ -32,68 +49,65 @@ function MoleConverter({ categoryId }) {
         pb.collection("categories").getOne(categoryId),
       ]);
 
-      console.log("Fetched units:", fetchedUnits);
-      setUnits(fetchedUnits);
+      if (cancelled) return;
 
-      const top = fetchedUnits.filter((u) => !u.parent_unit);
-      console.log("Top-level units:", top);
-      setTopUnits(top);
+      setUnits(fetchedUnits);
       setCategoryInfo(category);
 
-      const defaultFrom = top[0]?.id || "";
-      setFromUnit(defaultFrom);
+      const top = fetchedUnits.filter((u) => !u.parent_unit);
+      setTopUnits(top);
+      setFromUnits(top.slice(0, 3).map((u) => u?.id || null));
     };
 
-    fetchData(); // ← now it works correctly
+    fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, [categoryId]);
 
   useEffect(() => {
-    if (!fromUnit) return;
+    if (fromUnits.filter(Boolean).length < 3 || units.length === 0) return;
 
-    const fetchMoleUnits = async () => {
-      const [children, items] = await Promise.all([
-        pb
-          .collection("units")
-          .getFullList({ filter: `parent_unit = "${fromUnit}"` }),
-        pb.collection("realworld_items").getFullList({
-          filter: `unit.parent_unit = "${fromUnit}"`,
-          expand: "unit",
+    const fetchAllChildUnits = async () => {
+      setIsChildLoading(true);
+
+      const results = await Promise.all(
+        fromUnits.map(async (unitId, index) => {
+          if (!unitId) return { index, children: [] };
+
+          const children = await pb
+            .collection("units")
+            .getFullList({ filter: `parent_unit = "${unitId}"` });
+
+          return {
+            index,
+            children: children.sort(
+              (a, b) => a.to_base_factor - b.to_base_factor,
+            ),
+          };
         }),
-      ]);
-
-      const sortedChildUnits = children.sort(
-        (a, b) => a.to_base_factor - b.to_base_factor,
       );
 
-      const safeItems = items.filter((item) => item.unit !== null);
+      const updatedChildUnits = [...childUnits];
+      const updatedSelectedUnits = [...selectedUnits];
 
-      const getVal = (item) => {
-        const approxRaw = item.approx_value?.toString().trim();
-        const sciRaw = item.scientific_value?.toString().trim();
-        const approx = approxRaw ? parseFloat(approxRaw) : NaN;
-        const sci = sciRaw ? parseFloat(parseScientific(sciRaw)) : NaN;
+      results.forEach(({ index, children }) => {
+        updatedChildUnits[index] = children;
+        updatedSelectedUnits[index] = children[0]?.id || null;
+      });
 
-        if ((isNaN(approx) || approx === 0) && (isNaN(sci) || sci === 0))
-          return Infinity;
-        if (!isNaN(approx) && approx !== 0) return approx;
-        if (!isNaN(sci) && sci !== 0) return sci;
-        return Infinity;
-      };
-
-      const sortedItems = [...safeItems].sort((a, b) => getVal(a) - getVal(b));
-
-      setChildUnits(sortedChildUnits);
-      setSelectedUnits(sortedChildUnits.slice(0, 3).map((u) => u.id));
+      setChildUnits(updatedChildUnits);
+      setSelectedUnits(updatedSelectedUnits);
+      setIsChildLoading(false);
     };
 
-    fetchMoleUnits();
-  }, [fromUnit]);
+    fetchAllChildUnits();
+  }, [fromUnits, units]);
 
-  const getConvertedValue = (toUnitId) => {
-    const to = childUnits.find((u) => u.id === toUnitId);
-    const input = parseFloat(inputValue);
-    if (!to || isNaN(input)) return null;
-    return input * to.to_base_factor;
+  const getConvertedValue = (value, _from, to) => {
+    const num = parseScientific(value);
+    if (!to || typeof to.to_base_factor !== "number" || isNaN(num)) return null;
+    return num * to.to_base_factor;
   };
 
   return (
@@ -105,151 +119,123 @@ function MoleConverter({ categoryId }) {
         />
       )}
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
-          <div className="relative w-full">
-            <input
-              type="text"
-              value={
-                isFocused || !fromUnit
-                  ? inputValue
-                  : inputValue !== ""
-                    ? `${inputValue} ${units.find((u) => u.id === fromUnit)?.symbol || ""}`
-                    : ""
-              }
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onChange={(e) => {
-                const raw = e.target.value.match(/^\d*\.?\d*/)?.[0] || "";
-                if (raw === "" || (!isNaN(raw) && parseFloat(raw) >= 0)) {
-                  setInputValue(raw);
-                }
-              }}
-              placeholder="Enter value"
-              className="border p-2 rounded w-full text-left font-mono"
-            />
-          </div>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">
+        Volume Comparison
+      </h2>
 
-          <div className="border rounded max-h-40 overflow-y-auto w-full text-sm space-y-1 bg-white">
-            {units
-              .filter((u) => !u.parent_unit)
-              .map((u) => (
-                <div
-                  key={u.id}
-                  className={`cursor-pointer p-1 rounded hover:bg-blue-100 ${
-                    fromUnit === u.id ? "bg-blue-200 font-medium" : ""
-                  }`}
-                  onClick={() => setFromUnit(u.id)}
-                >
-                  {u.name} ({u.symbol})
-                </div>
-              ))}
-          </div>
-        </div>
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {[0, 1, 2].map((index) => {
+          const fromUnitId = fromUnits[index];
+          const fromUnit = units.find((u) => u.id === fromUnitId);
+          const children = childUnits[index] || [];
+          const toUnitId = selectedUnits[index];
+          const currentUnit = children.find((u) => u.id === toUnitId);
 
-        <div className="flex-1 space-y-10">
-          {/* Comparison Section */}
-          <div>
-            <div className="text-center text-xl font-bold text-gray-700 mb-2">
-              Volume Comparison
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {selectedUnits.map((toUnitId, index) => {
-                const currentUnit = childUnits.find((u) => u.id === toUnitId);
-                return (
-                  <div
-                    key={index}
-                    className="p-4 rounded shadow flex flex-col gap-3"
-                    style={{ backgroundColor: theme?.box }}
+          const input = inputValues[index];
+          const result = getConvertedValue(input, fromUnit, currentUnit);
+
+          return (
+            <div
+              key={index}
+              className="w-full lg:w-1/3 flex flex-col gap-4 border rounded p-4 bg-white shadow min-h-[200px]"
+            >
+              {/* Input */}
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => {
+                  const raw = e.target.value.match(/^-?\d*\.?\d*/)?.[0] || "";
+                  if (raw === "" || (!isNaN(raw) && parseFloat(raw) >= 0)) {
+                    handleInputChange(index, raw);
+                  }
+                }}
+                placeholder="Enter value"
+                className="border p-2 rounded w-full text-left font-mono"
+              />
+
+              {/* Parent Dropdown */}
+              <div className="border rounded max-h-40 overflow-y-auto w-full text-sm space-y-1 bg-white">
+                {units
+                  .filter((u) => u.id === assignedParentUnitIds[index])
+                  .map((u) => (
+                    <div
+                      key={u.id}
+                      className={`cursor-pointer p-1 rounded hover:bg-blue-100 ${fromUnitId === u.id ? "bg-blue-200 font-medium" : ""}`}
+                      onClick={() => handleFromUnitChange(index, u.id)}
+                    >
+                      {u.name} ({u.symbol})
+                    </div>
+                  ))}
+              </div>
+
+              {/* Toggle Buttons */}
+              <div className="flex justify-center gap-2 mb-2">
+                {["General", "Scientific"].map((label, i) => (
+                  <button
+                    key={label}
+                    className={`px-3 py-1 ${i === 0 ? "rounded-l" : "rounded-r"} ${
+                      conversionToggles[index] === (i === 1)
+                        ? "text-white"
+                        : "bg-white border text-black"
+                    }`}
+                    style={{
+                      borderColor: "#ccc",
+                      backgroundColor:
+                        conversionToggles[index] === (i === 1)
+                          ? primaryColor
+                          : "white",
+                    }}
+                    onClick={() =>
+                      setConversionToggles((prev) =>
+                        prev.map((t, j) => (j === index ? i === 1 : t)),
+                      )
+                    }
                   >
-                    <div className="flex justify-center gap-2">
-                      <button
-                        className={`px-3 py-1 rounded-l ${
-                          !conversionToggles[index]
-                            ? "text-white"
-                            : "bg-white border text-black"
-                        }`}
-                        style={{
-                          borderColor: "#ccc",
-                          backgroundColor: !conversionToggles[index]
-                            ? primaryColor
-                            : "white",
-                        }}
-                        onClick={() =>
-                          setConversionToggles((prev) =>
-                            prev.map((t, i) => (i === index ? false : t)),
-                          )
-                        }
-                      >
-                        General
-                      </button>
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-                      <button
-                        className={`px-3 py-1 rounded-r ${
-                          conversionToggles[index]
-                            ? "text-white"
-                            : "bg-white border text-black"
-                        }`}
-                        style={{
-                          borderColor: "#ccc",
-                          backgroundColor: conversionToggles[index]
-                            ? primaryColor
-                            : "white",
-                        }}
-                        onClick={() =>
-                          setConversionToggles((prev) =>
-                            prev.map((t, i) => (i === index ? true : t)),
-                          )
-                        }
-                      >
-                        Scientific
-                      </button>
-                    </div>
+              {/* Result */}
+              <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
+                <div className="break-words whitespace-normal leading-snug w-full">
+                  {typeof currentUnit?.to_base_factor === "number" && input ? (
+                    <>
+                      {conversionToggles[index]
+                        ? formatNumber(result, true)
+                        : formatNumber(result, false)}{" "}
+                      {currentUnit?.symbol || ""}
+                    </>
+                  ) : (
+                    <>{currentUnit?.symbol || ""}</>
+                  )}
+                </div>
+              </div>
 
-                    {/* Result */}
-                    <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px]">
-                      <div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug w-full">
-                        {getConvertedValue(toUnitId) !== null ? (
-                          <>
-                            {formatNumber(
-                              getConvertedValue(toUnitId),
-                              conversionToggles[index],
-                            )}{" "}
-                            {currentUnit?.symbol}
-                          </>
-                        ) : (
-                          currentUnit?.symbol || ""
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">
-                      {childUnits.map((u) => (
-                        <div
-                          key={u.id}
-                          className={`cursor-pointer p-1 hover:bg-blue-100 ${
-                            toUnitId === u.id ? "bg-blue-200 font-medium" : ""
-                          }`}
-                          onClick={() =>
-                            setSelectedUnits((prev) =>
-                              prev.map((id, i) => (i === index ? u.id : id)),
-                            )
-                          }
-                        >
-                          {u.name} ({u.symbol})
-                        </div>
-                      ))}
-                    </div>
+              {/* Child Unit Selector */}
+              <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white mt-2">
+                {children.map((u) => (
+                  <div
+                    key={u.id}
+                    className={`cursor-pointer p-1 hover:bg-blue-100 ${toUnitId === u.id ? "bg-blue-200 font-medium" : ""}`}
+                    onClick={() =>
+                      setSelectedUnits((prev) =>
+                        prev.map((id, i) => (i === index ? u.id : id)),
+                      )
+                    }
+                  >
+                    {u.name} ({u.symbol})
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-            {/* Footer note goes here */}
-            <div className="mt-4">
-              <FooterNote theme={theme} />
-            </div>
-          </div>
-        </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="mt-4">
+        <FooterNote theme={theme} />
       </div>
     </div>
   );
