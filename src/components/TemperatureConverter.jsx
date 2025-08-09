@@ -3,15 +3,10 @@ import pb from "../utils/pocketbaseClient";
 import RealWorldBox from "./RealWorldBox";
 import { formatNumber } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
-import { parseScientific } from "../utils/parseScientific";
-import MoleConverter from "./MoleConverter";
-import TemperatureConverter from "./TemperatureConverter";
-import RefractiveIndexConverter from "./RefractiveIndexConverter";
-import AngleConverter from "./AngleConverter";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
 
-function Converter({ categoryId }) {
+function TemperatureConverter({ categoryId }) {
   const theme = useTheme();
   const primaryColor = theme?.primary || "#2b66e6";
   const [units, setUnits] = useState([]);
@@ -21,38 +16,27 @@ function Converter({ categoryId }) {
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
-  const [comparisonToggles, setComparisonToggles] = useState([
-    false,
-    false,
-    false,
-  ]);
-  const [conversionToggles, setConversionToggles] = useState([
-    false,
-    false,
-    false,
-  ]);
+  const [comparisonToggles, setComparisonToggles] = useState([false, false, false]);
+  const [conversionToggles, setConversionToggles] = useState([false, false, false]);
   const [categoryInfo, setCategoryInfo] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [unitList, category] = await Promise.all([
-          pb
-            .collection("units")
-            .getFullList({ filter: `category = "${categoryId}"` }),
+          pb.collection("units").getFullList({ filter: `category = "${categoryId}"` }),
           pb.collection("categories").getOne(categoryId),
         ]);
         setCategoryInfo(category);
 
         const sortedUnits = unitList.sort(
-          (a, b) => a.to_base_factor - b.to_base_factor,
+          (a, b) => a.to_base_factor - b.to_base_factor
         );
         setUnits(sortedUnits);
 
         const defaultFromUnit = sortedUnits[0]?.id || "";
         setFromUnit(defaultFromUnit);
 
-        // Initialize 3 conversion boxes
         const defaultConversions = sortedUnits
           .filter((u) => u.id !== defaultFromUnit)
           .slice(0, 3)
@@ -140,6 +124,8 @@ function Converter({ categoryId }) {
   if (categoryId) fetchRealWorldItems();
 }, [categoryId]);
 
+
+  
   useEffect(() => {
   if (units.length > 1 && fromUnit) {
     const defaultConversions = units
@@ -150,12 +136,6 @@ function Converter({ categoryId }) {
   }
 }, [fromUnit, units]);
 
-  // Delegete to their respective category page
-  const categoryName = categoryInfo?.name.toLowerCase();
-  if (categoryName === "mole") return <MoleConverter categoryId={categoryId} />;
-  if (categoryName === "temperature") return <TemperatureConverter categoryId={categoryId} />;
-  if (categoryName === "refractive index")return <RefractiveIndexConverter categoryId={categoryId} />;
-  if (categoryName === "angle")return <AngleConverter categoryId={categoryId} />;
 
   const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
@@ -163,20 +143,19 @@ function Converter({ categoryId }) {
     if (!from || !to || !inputValue) return null;
 
     const input = parseFloat(inputValue);
+    const fromFactor = parseFloat(from.to_base_factor);
+    const toFactor = parseFloat(to.to_base_factor);
+    const fromOffset = parseFloat(from.offset || 0);
+    const toOffset = parseFloat(to.offset || 0);
 
-    // Safely handle numeric or object format
-    const fromFactor = parseFloat(
-      from.to_base_factor?.value ?? from.to_base_factor,
-    );
-    const toFactor = parseFloat(to.to_base_factor?.value ?? to.to_base_factor);
+    if ([fromFactor, toFactor].some(isNaN)) return null;
 
-    if (isNaN(fromFactor) || isNaN(toFactor)) return null;
+    // Convert to Kelvin (base)
+    const kelvin = (input + fromOffset) * fromFactor;
 
-    const baseValue = input * fromFactor;
-    return baseValue / toFactor;
+    // Convert Kelvin to target unit
+    return (kelvin / toFactor) - toOffset;
   };
-
-  const getUnitById = (id) => units.find((u) => u.id === id);
 
   const getComparisonValue = (item) => {
     if (!item || !inputValue) return null;
@@ -185,17 +164,19 @@ function Converter({ categoryId }) {
     if (!from) return null;
 
     const input = parseFloat(inputValue);
-    const baseValue = input * from.to_base_factor;
+    const fromFactor = parseFloat(from.to_base_factor);
+    const fromOffset = parseFloat(from.offset || 0);
 
-    // Use fallback logic: expression_value > approx_value > scientific_value
+    const kelvin = (input + fromOffset) * fromFactor;
+
     const comparisonValueRaw =
-      (item.expression_value && parseFloat(item.expression_value)) ||
-      (item.approx_value && parseFloat(item.approx_value)) ||
-      (item.scientific_value && parseFloat(item.scientific_value));
+      parseFloat(item.expression_value) ||
+      parseFloat(item.approx_value) ||
+      parseFloat(item.scientific_value);
 
     if (!comparisonValueRaw || isNaN(comparisonValueRaw)) return null;
 
-    return baseValue / comparisonValueRaw;
+    return kelvin / comparisonValueRaw;
   };
 
   return (
@@ -208,6 +189,7 @@ function Converter({ categoryId }) {
       )}
 
       <div className="flex flex-col lg:flex-row gap-6">
+        {/* Left side input & from-unit selection */}
         <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
           <div className="relative w-full">
             <input
@@ -247,6 +229,7 @@ function Converter({ categoryId }) {
           </div>
         </div>
 
+        {/* Right side conversion & comparison */}
         <div className="flex-1 space-y-10">
           {/* Conversion */}
           {units.length > 1 && (
@@ -266,42 +249,32 @@ function Converter({ categoryId }) {
                       {/* Toggle buttons */}
                       <div className="flex justify-center gap-2">
                         <button
-                          aria-label="Switch to General view"
                           className={`px-3 py-1 rounded-l ${
-                            !conversionToggles[index]
-                              ? "text-white"
-                              : "bg-white border text-black"
+                            !conversionToggles[index] ? "text-white" : "bg-white border text-black"
                           }`}
                           style={{
+                            backgroundColor: !conversionToggles[index] ? primaryColor : "white",
                             borderColor: "#ccc",
-                            backgroundColor: !conversionToggles[index]
-                              ? primaryColor
-                              : "white",
                           }}
                           onClick={() =>
                             setConversionToggles((prev) =>
-                              prev.map((t, i) => (i === index ? false : t)),
+                              prev.map((t, i) => (i === index ? false : t))
                             )
                           }
                         >
                           General
                         </button>
                         <button
-                          aria-label="Switch to Scientific view"
                           className={`px-3 py-1 rounded-r ${
-                            conversionToggles[index]
-                              ? "text-white"
-                              : "bg-white border text-black"
+                            conversionToggles[index] ? "text-white" : "bg-white border text-black"
                           }`}
                           style={{
+                            backgroundColor: conversionToggles[index] ? primaryColor : "white",
                             borderColor: "#ccc",
-                            backgroundColor: conversionToggles[index]
-                              ? primaryColor
-                              : "white",
                           }}
                           onClick={() =>
                             setConversionToggles((prev) =>
-                              prev.map((t, i) => (i === index ? true : t)),
+                              prev.map((t, i) => (i === index ? true : t))
                             )
                           }
                         >
@@ -312,18 +285,9 @@ function Converter({ categoryId }) {
                       {/* Result */}
                       <div className="overflow-x-auto max-w-full">
                         <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
-							<div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
-                          {inputValue &&
-                          getConvertedValue(toUnitId) !== null ? (
-                            <>
-                              {formatNumber(
-                                getConvertedValue(toUnitId),
-                                conversionToggles[index],
-                              )}{" "}
-                            </>
-                          ) : null}
-                          {currentUnit?.symbol || ""}
-						 </div>
+                          {inputValue && getConvertedValue(toUnitId) !== null
+                            ? `${formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} ${currentUnit?.symbol || ""}`
+                            : ""}
                         </div>
                       </div>
 
@@ -335,15 +299,11 @@ function Converter({ categoryId }) {
                             <div
                               key={u.id}
                               className={`cursor-pointer p-1 hover:bg-blue-100 ${
-                                toUnitId === u.id
-                                  ? "bg-blue-200 font-medium"
-                                  : ""
+                                toUnitId === u.id ? "bg-blue-200 font-medium" : ""
                               }`}
                               onClick={() =>
                                 setSelectedUnits((prev) =>
-                                  prev.map((id, i) =>
-                                    i === index ? u.id : id,
-                                  ),
+                                  prev.map((id, i) => (i === index ? u.id : id))
                                 )
                               }
                             >
@@ -373,43 +333,32 @@ function Converter({ categoryId }) {
                   >
                     <div className="flex justify-center gap-2">
                       <button
-                        aria-label="Switch to General view"
                         className={`px-3 py-1 rounded-l ${
-                          !comparisonToggles[index]
-                            ? "text-white"
-                            : "bg-white border text-black"
+                          !comparisonToggles[index] ? "text-white" : "bg-white border text-black"
                         }`}
                         style={{
+                          backgroundColor: !comparisonToggles[index] ? primaryColor : "white",
                           borderColor: "#ccc",
-                          backgroundColor: !comparisonToggles[index]
-                            ? primaryColor
-                            : "white",
                         }}
                         onClick={() =>
                           setComparisonToggles((prev) =>
-                            prev.map((t, i) => (i === index ? false : t)),
+                            prev.map((t, i) => (i === index ? false : t))
                           )
                         }
                       >
                         General
                       </button>
-
                       <button
-                        aria-label="Switch to Scientific view"
                         className={`px-3 py-1 rounded-r ${
-                          comparisonToggles[index]
-                            ? "text-white"
-                            : "bg-white border text-black"
+                          comparisonToggles[index] ? "text-white" : "bg-white border text-black"
                         }`}
                         style={{
+                          backgroundColor: comparisonToggles[index] ? primaryColor : "white",
                           borderColor: "#ccc",
-                          backgroundColor: comparisonToggles[index]
-                            ? primaryColor
-                            : "white",
                         }}
                         onClick={() =>
                           setComparisonToggles((prev) =>
-                            prev.map((t, i) => (i === index ? true : t)),
+                            prev.map((t, i) => (i === index ? true : t))
                           )
                         }
                       >
@@ -417,26 +366,20 @@ function Converter({ categoryId }) {
                       </button>
                     </div>
 
-                    {/* Result */}
                     <div className="overflow-x-auto max-w-full">
                       <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
-                        <div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
-						{selectedItem && inputValue
-                          ? formatNumber(
-                              getComparisonValue(selectedItem),
-                              comparisonToggles[index],
-                            )
+                        {selectedItem && inputValue
+                          ? formatNumber(getComparisonValue(selectedItem), comparisonToggles[index])
                           : ""}
-						</div>
                       </div>
                     </div>
 
-                    <div className="h-[300px] overflow-y-auto pr-1 sm:max-h-[none] max-h-[80vh]">
+                    <div className="h-[300px] overflow-y-auto pr-1">
                       <RealWorldBox
                         selected={selectedItem}
                         setSelected={(val) =>
                           setSelectedItems((prev) =>
-                            prev.map((item, i) => (i === index ? val : item)),
+                            prev.map((item, i) => (i === index ? val : item))
                           )
                         }
                         items={realWorldItems}
@@ -446,7 +389,6 @@ function Converter({ categoryId }) {
                   </div>
                 ))}
               </div>
-              {/* Footer note goes here */}
               <div className="mt-4">
                 <FooterNote theme={theme} />
               </div>
@@ -458,4 +400,4 @@ function Converter({ categoryId }) {
   );
 }
 
-export default Converter;
+export default TemperatureConverter;

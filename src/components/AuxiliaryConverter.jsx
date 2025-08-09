@@ -42,40 +42,51 @@ function AuxiliaryConverter({ categoryId }) {
           expand: "unit",
         });
 
-        function getVal(item) {
-          const approxRaw = item.approx_value?.toString().trim();
-          const sciRaw = item.scientific_value;
+        // Split forced-last items from normal
+        const forcedItems = realItems.filter(
+          (i) => i.force_last_position === true,
+        );
+        const normalItems = realItems.filter(
+          (i) => i.force_last_position !== true,
+        );
 
-          const approx = approxRaw ? parseFloat(approxRaw) : NaN;
-          const sci = parseScientific(sciRaw);
+        // Sort normal items by value
+        const sortedNormal = normalItems.sort((a, b) => {
+          const aVal =
+            typeof a.approx_value === "string"
+              ? parseScientific(a.approx_value)
+              : (a.approx_value ?? a.scientific_value ?? 0);
+          const bVal =
+            typeof b.approx_value === "string"
+              ? parseScientific(b.approx_value)
+              : (b.approx_value ?? b.scientific_value ?? 0);
+          return aVal - bVal;
+        });
 
-          const isZeroOrMissing = (v) => isNaN(v) || v === 0 || v === null;
+        // Merge and map
+        const sortedReal = [...sortedNormal, ...forcedItems].map((item) => {
+          const sciVal = parseScientific(item.scientific_value);
+          return {
+            ...item,
+            exponent: sciVal ? Math.floor(Math.log10(sciVal)) : null,
+          };
+        });
 
-          if (item.force_zero_position) return -Infinity;
-          if (isZeroOrMissing(approx) && isZeroOrMissing(sci)) return Infinity;
-          if (!isNaN(approx) && approx !== 0) return approx;
-          if (sci !== null && sci !== 0) return sci;
+        // Distribute blank cards (if any)
+        const withBlanks = distributeBlankCards(sortedReal, 9);
 
-          return Infinity;
+        // Move any forced item to end again (in case blank shifting affects it)
+        const final = [...withBlanks];
+        const index = final.findIndex((i) => i.force_last_position === true);
+        if (index !== -1) {
+          const [forced] = final.splice(index, 1);
+          final.push(forced);
         }
 
-        const sortedReal = [...realItems]
-          .sort((a, b) => getVal(a) - getVal(b))
-          .map((item) => {
-            const sciVal = parseScientific(item.scientific_value);
-            return {
-              ...item,
-              exponent: sciVal ? Math.floor(Math.log10(sciVal)) : null,
-            };
-          });
-
-        const withBlanks = distributeBlankCards(sortedReal, 9); // Max 9 blank cards
-        setRealWorldItems(withBlanks);
-        setSelectedItem(
-          withBlanks.find((item) => item.type !== "blank") || null,
-        );
-      } catch (err) {
-        console.error("Auxiliary fetch error:", err);
+        setRealWorldItems(final);
+        setSelectedItem(final.find((i) => i.type !== "blank") || null);
+      } catch (error) {
+        console.error("Error loading auxiliary data:", error);
       }
     }
 
@@ -239,12 +250,11 @@ function AuxiliaryConverter({ categoryId }) {
               Scientific
             </button>
           </div>
-		  {/* Comparison Result */}
+		  
+          {/* Comparison Result */}
           <div className="bg-gray-100 p-2 text-center font-bold text-sm sm:text-base rounded mb-2 min-h-[48px] text-blue-700 flex items-center justify-center whitespace-normal break-words break-all overflow-hidden max-w-full">
             {selectedItem && inputValue && !isNaN(getComparisonValue()) ? (
-              <>
-                {formatNumber(getComparisonValue(), comparisonToggle)}{" "}
-              </>
+              <>{formatNumber(getComparisonValue(), comparisonToggle)} </>
             ) : (
               ""
             )}

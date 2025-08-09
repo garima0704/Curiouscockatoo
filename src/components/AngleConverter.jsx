@@ -245,13 +245,13 @@ function AngleConverter({ categoryId }) {
                   </button>
                 </div>
 
-                {/* Result */}
+                {/* Conversion Result */}
                 <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px] flex items-center justify-center">
                   {getConvertedValue(toUnitId) != null &&
                   !isNaN(getConvertedValue(toUnitId))
                     ? `${formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} ${getUnitById(toUnitId)?.symbol || ""}`
                     : getUnitById(toUnitId)?.symbol || ""}
-                </div>
+                </div>	
 
                 {/* Unit List */}
                 <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">
@@ -371,17 +371,29 @@ function AngleConverter({ categoryId }) {
                   Scientific
                 </button>
               </div>
+			  
+			  {/* Arc Length Heading */}
+				<div className="text-center font-semibold text-gray-700 text-sm">
+					Arc Length
+				</div>
 
-              {/* Result */}
-
+              {/* Comparison Result */}
               <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-base min-h-[48px] flex flex-col items-center justify-center leading-snug">
                 <div>{matchedItem?.arc_length_value || "No Match"}</div>
                 <div className="text-sm text-gray-600 font-medium">
                   {matchedItem?.name || ""}
                 </div>
               </div>
-
-              {/* Real World Selector */}
+			  
+			  {/* Distance label + Real World Selector */}
+			  <div className="flex items-center gap-2">
+                {/* Vertical 'Distance' label */}
+				<div className="flex justify-center w-8">
+					<span className="text-sm font-semibold text-gray-700 transform -rotate-90">
+						Distance
+					</span>
+				</div>
+			 
               <div className="text-sm">
                 <AngleRealWorldBox
                   selectedItem={selectedItem}
@@ -401,6 +413,7 @@ function AngleConverter({ categoryId }) {
                 />
               </div>
             </div>
+			</div>
           );
         })}
         {/* Footer note goes here */}

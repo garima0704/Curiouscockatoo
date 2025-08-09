@@ -29,11 +29,32 @@ function RefractiveIndexConverter({ categoryId }) {
         });
 
         const withExponents = response.map((item) => {
-          const value = parseFloat(item.scientific_value);
-          const exponent = isNaN(value)
+          const sci = parseFloat(item.scientific_value);
+          const approx = parseFloat(item.approx_value);
+          const exponent = isNaN(sci)
             ? null
-            : Math.floor(Math.log10(Math.abs(value)));
-          return { ...item, exponent };
+            : Math.floor(Math.log10(Math.abs(sci)));
+
+          return {
+            ...item,
+            exponent,
+            approx: isNaN(approx) ? 0 : approx,
+            sci: isNaN(sci) ? 0 : sci,
+          };
+        });
+
+        // SORT HERE before distributeBlankCards
+        withExponents.sort((a, b) => {
+          const aHasVal = a.approx || a.sci;
+          const bHasVal = b.approx || b.sci;
+
+          if (a.force_zero_position && !b.force_zero_position) return 1;
+          if (!a.force_zero_position && b.force_zero_position) return -1;
+          if (!aHasVal && !bHasVal) return 0;
+          if (!aHasVal) return 1;
+          if (!bHasVal) return -1;
+
+          return a.approx - b.approx;
         });
 
         const safeItems = withExponents.filter(
