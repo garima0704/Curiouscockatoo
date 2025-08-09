@@ -66,96 +66,99 @@ function Converter({ categoryId }) {
   }, [categoryId]);
 
   useEffect(() => {
-  const fetchRealWorldItems = async () => {
-    const response = await pb.collection("realworld_items").getFullList({
-      filter: `category = "${categoryId}"`,
-      expand: "unit",
-    });
+    const fetchRealWorldItems = async () => {
+      const response = await pb.collection("realworld_items").getFullList({
+        filter: `category = "${categoryId}"`,
+        expand: "unit",
+      });
 
-    const withExponents = response.map((item) => {
-      const value = parseFloat(item.scientific_value);
-      const exponent = isNaN(value)
-        ? null
-        : Math.floor(Math.log10(Math.abs(value)));
-      return { ...item, exponent };
-    });
+      const withExponents = response.map((item) => {
+        const value = parseFloat(item.scientific_value);
+        const exponent = isNaN(value)
+          ? null
+          : Math.floor(Math.log10(Math.abs(value)));
+        return { ...item, exponent };
+      });
 
-    // Helper to check if approx_value or scientific_value is valid non-zero
-    const isValidValue = (item) => {
-      const approx = parseFloat(item.approx_value);
-      const sci = parseFloat(item.scientific_value);
-      return (approx && approx !== 0) || (sci && sci !== 0);
+      // Helper to check if approx_value or scientific_value is valid non-zero
+      const isValidValue = (item) => {
+        const approx = parseFloat(item.approx_value);
+        const sci = parseFloat(item.scientific_value);
+        return (approx && approx !== 0) || (sci && sci !== 0);
+      };
+
+      // Separate forced-last-position items with invalid zero values
+      const zeroForceLastItems = withExponents.filter(
+        (item) => item.force_last_position && !isValidValue(item),
+      );
+
+      // Filter real items to exclude zero-value forced last items
+      const filteredRealItems = withExponents.filter(
+        (item) => !(item.force_last_position && !isValidValue(item)),
+      );
+
+      const safeItems = filteredRealItems.filter(
+        (item) => item.exponent !== null && !isNaN(item.exponent),
+      );
+
+      const enrichedItems = distributeBlankCards(safeItems, 9);
+
+      // Sort items with updated logic, only consider valid forced last items
+      enrichedItems.sort((a, b) => {
+        const aForce = a.force_last_position && isValidValue(a);
+        const bForce = b.force_last_position && isValidValue(b);
+
+        if (aForce && !bForce) return 1;
+        if (!aForce && bForce) return -1;
+
+        if (a.power !== b.power) return a.power - b.power;
+
+        const aApprox = a.approx_value ?? Infinity;
+        const bApprox = b.approx_value ?? Infinity;
+
+        return aApprox - bApprox;
+      });
+
+      // Append the zero-value forced last items at the very end
+      const finalItems = [...enrichedItems, ...zeroForceLastItems].sort(
+        (a, b) => a.power - b.power,
+      );
+
+      setRealWorldItems(finalItems);
+
+      // Set default selectedItems (first 3 real items ignoring blanks)
+      const realItems = finalItems.filter((item) => item.type !== "blank");
+
+      const defaultSelected = [
+        realItems[0] || null,
+        realItems[1] || null,
+        realItems[2] || null,
+      ];
+
+      setSelectedItems(defaultSelected);
     };
-
-    // Separate forced-last-position items with invalid zero values
-    const zeroForceLastItems = withExponents.filter(
-      (item) => item.force_last_position && !isValidValue(item)
-    );
-
-    // Filter real items to exclude zero-value forced last items
-    const filteredRealItems = withExponents.filter(
-      (item) => !(item.force_last_position && !isValidValue(item))
-    );
-
-    const safeItems = filteredRealItems.filter(
-      (item) => item.exponent !== null && !isNaN(item.exponent)
-    );
-
-    const enrichedItems = distributeBlankCards(safeItems, 9);
-
-    // Sort items with updated logic, only consider valid forced last items
-    enrichedItems.sort((a, b) => {
-      const aForce = a.force_last_position && isValidValue(a);
-      const bForce = b.force_last_position && isValidValue(b);
-
-      if (aForce && !bForce) return 1;
-      if (!aForce && bForce) return -1;
-
-      if (a.power !== b.power) return a.power - b.power;
-
-      const aApprox = a.approx_value ?? Infinity;
-      const bApprox = b.approx_value ?? Infinity;
-
-      return aApprox - bApprox;
-    });
-
-    // Append the zero-value forced last items at the very end
-    const finalItems = [...enrichedItems, ...zeroForceLastItems].sort(
-      (a, b) => a.power - b.power
-    );
-
-    setRealWorldItems(finalItems);
-
-    // Set default selectedItems (first 3 real items ignoring blanks)
-    const realItems = finalItems.filter((item) => item.type !== "blank");
-
-    const defaultSelected = [
-      realItems[0] || null,
-      realItems[1] || null,
-      realItems[2] || null,
-    ];
-
-    setSelectedItems(defaultSelected);
-  };
-  if (categoryId) fetchRealWorldItems();
-}, [categoryId]);
+    if (categoryId) fetchRealWorldItems();
+  }, [categoryId]);
 
   useEffect(() => {
-  if (units.length > 1 && fromUnit) {
-    const defaultConversions = units
-      .filter((u) => u.id !== fromUnit)
-      .slice(0, 3)
-      .map((u) => u.id);
-    setSelectedUnits(defaultConversions);
-  }
-}, [fromUnit, units]);
+    if (units.length > 1 && fromUnit) {
+      const defaultConversions = units
+        .filter((u) => u.id !== fromUnit)
+        .slice(0, 3)
+        .map((u) => u.id);
+      setSelectedUnits(defaultConversions);
+    }
+  }, [fromUnit, units]);
 
   // Delegete to their respective category page
   const categoryName = categoryInfo?.name.toLowerCase();
   if (categoryName === "mole") return <MoleConverter categoryId={categoryId} />;
-  if (categoryName === "temperature") return <TemperatureConverter categoryId={categoryId} />;
-  if (categoryName === "refractive index")return <RefractiveIndexConverter categoryId={categoryId} />;
-  if (categoryName === "angle")return <AngleConverter categoryId={categoryId} />;
+  if (categoryName === "temperature")
+    return <TemperatureConverter categoryId={categoryId} />;
+  if (categoryName === "refractive index")
+    return <RefractiveIndexConverter categoryId={categoryId} />;
+  if (categoryName === "angle")
+    return <AngleConverter categoryId={categoryId} />;
 
   const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
@@ -248,19 +251,27 @@ function Converter({ categoryId }) {
         </div>
 
         <div className="flex-1 space-y-10">
-          {/* Conversion */}
-          {units.length > 1 && (
+          
+		  {/* Conversion */}
+          {units.length > 1 && selectedUnits.length > 0 && (
             <div className="mx-auto" style={{ maxWidth: "52rem" }}>
               <div className="text-center text-xl font-bold text-gray-700 mb-2">
                 Conversion
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+              <div
+                className={`grid gap-6 justify-items-center
+        ${selectedUnits.length === 1 ? "grid-cols-1" : ""}
+        ${selectedUnits.length === 2 ? "grid-cols-2" : ""}
+        ${selectedUnits.length >= 3 ? "md:grid-cols-3" : ""}
+      `}
+              >
                 {selectedUnits.map((toUnitId, index) => {
                   const currentUnit = units.find((u) => u.id === toUnitId);
                   return (
                     <div
                       key={index}
-                      className="w-full p-4 rounded shadow flex flex-col gap-3"
+                      className="w-full max-w-sm p-4 rounded shadow flex flex-col gap-3"
                       style={{ backgroundColor: theme?.box }}
                     >
                       {/* Toggle buttons */}
@@ -312,18 +323,18 @@ function Converter({ categoryId }) {
                       {/* Result */}
                       <div className="overflow-x-auto max-w-full">
                         <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
-							<div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
-                          {inputValue &&
-                          getConvertedValue(toUnitId) !== null ? (
-                            <>
-                              {formatNumber(
-                                getConvertedValue(toUnitId),
-                                conversionToggles[index],
-                              )}{" "}
-                            </>
-                          ) : null}
-                          {currentUnit?.symbol || ""}
-						 </div>
+                          <div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
+                            {inputValue &&
+                            getConvertedValue(toUnitId) !== null ? (
+                              <>
+                                {formatNumber(
+                                  getConvertedValue(toUnitId),
+                                  conversionToggles[index],
+                                )}{" "}
+                              </>
+                            ) : null}
+                            {currentUnit?.symbol || ""}
+                          </div>
                         </div>
                       </div>
 
@@ -421,13 +432,13 @@ function Converter({ categoryId }) {
                     <div className="overflow-x-auto max-w-full">
                       <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
                         <div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
-						{selectedItem && inputValue
-                          ? formatNumber(
-                              getComparisonValue(selectedItem),
-                              comparisonToggles[index],
-                            )
-                          : ""}
-						</div>
+                          {selectedItem && inputValue
+                            ? formatNumber(
+                                getComparisonValue(selectedItem),
+                                comparisonToggles[index],
+                              )
+                            : ""}
+                        </div>
                       </div>
                     </div>
 
