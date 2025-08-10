@@ -262,7 +262,7 @@ function Converter({ categoryId }) {
               <div
                 className={`grid gap-6 justify-items-center
         ${selectedUnits.length === 1 ? "grid-cols-1" : ""}
-        ${selectedUnits.length === 2 ? "grid-cols-2" : ""}
+        ${selectedUnits.length === 2 ? "grid-cols-1 sm:grid-cols-2" : ""}
         ${selectedUnits.length >= 3 ? "md:grid-cols-3" : ""}
       `}
               >

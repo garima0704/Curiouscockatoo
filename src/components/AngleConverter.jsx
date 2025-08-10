@@ -146,7 +146,7 @@ function AngleConverter({ categoryId }) {
           dangerouslySetInnerHTML={{ __html: categoryInfo.top_notes }}
         />
       )}
-      {/* ✅ Conversion Section */}
+      {/* Conversion Section */}
       {units.length > 1 && (
         <div className="flex flex-col items-center gap-6">
           <div className="w-full text-center text-xl font-bold text-gray-700">
