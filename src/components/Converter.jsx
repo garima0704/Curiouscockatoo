@@ -8,6 +8,7 @@ import MoleConverter from "./MoleConverter";
 import TemperatureConverter from "./TemperatureConverter";
 import RefractiveIndexConverter from "./RefractiveIndexConverter";
 import AngleConverter from "./AngleConverter";
+import SoundLevelConverter from "./SoundLevelConverter";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
 
@@ -153,12 +154,10 @@ function Converter({ categoryId }) {
   // Delegete to their respective category page
   const categoryName = categoryInfo?.name.toLowerCase();
   if (categoryName === "mole") return <MoleConverter categoryId={categoryId} />;
-  if (categoryName === "temperature")
-    return <TemperatureConverter categoryId={categoryId} />;
-  if (categoryName === "refractive index")
-    return <RefractiveIndexConverter categoryId={categoryId} />;
-  if (categoryName === "angle")
-    return <AngleConverter categoryId={categoryId} />;
+  if (categoryName === "temperature") return <TemperatureConverter categoryId={categoryId} />;
+  if (categoryName === "refractive index") return <RefractiveIndexConverter categoryId={categoryId} />;
+  if (categoryName === "angle") return <AngleConverter categoryId={categoryId} />;
+  if (categoryName === "sound level") return <SoundLevelConverter categoryId={categoryId} />;
 
   const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
