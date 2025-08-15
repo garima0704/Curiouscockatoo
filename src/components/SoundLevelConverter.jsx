@@ -37,7 +37,7 @@ function SoundLevelConverter({ categoryId }) {
 
       const validItems = response.filter(
         (item) =>
-          !isNaN(parseFloat(item.approx_value || item.scientific_value))
+          !isNaN(parseFloat(item.approx_value || item.scientific_value)),
       );
 
       setRealWorldItems(validItems);
@@ -49,73 +49,51 @@ function SoundLevelConverter({ categoryId }) {
   }, [categoryId]);
 
   // Update selected items when input changes
-useEffect(() => {
-  if (inputValue === "" || inputValue === "-") {
-    // Default: show all items in both boxes
-    setFilteredItems([realWorldItems, realWorldItems]);
-    setSelectedItems([realWorldItems[0] || null, realWorldItems[0] || null]);
-    return;
-  }
+  useEffect(() => {
+    if (inputValue === "" || inputValue === "-") {
+      // Default: show all items in both boxes
+      setFilteredItems([realWorldItems, realWorldItems]);
+      setSelectedItems([realWorldItems[0] || null, realWorldItems[0] || null]);
+      return;
+    }
 
-  const input = parseFloat(inputValue);
-  if (isNaN(input) || input < -30 || input > 310) {
-    setSelectedItems([null, null]);
-    setFilteredItems([[], []]);
-    return;
-  }
+    const input = parseFloat(inputValue);
+    if (isNaN(input) || input < -30 || input > 310) {
+      setSelectedItems([null, null]);
+      setFilteredItems([[], []]);
+      return;
+    }
 
-  // ✅ Fixed 10-interval range
-  let start, end;
-  if (input >= -30 && input <= 0) {
-    start = -30;
-    end = 0;
-  } else {
-    const rangeSize = 10;
-    start = Math.floor((input - 1) / rangeSize) * rangeSize + 1;
-    end = start + rangeSize - 1;
-  }
+    // Sort all items by value
+    const sortedItems = [...realWorldItems].sort(
+      (a, b) =>
+        parseFloat(a.approx_value || a.scientific_value) -
+        parseFloat(b.approx_value || b.scientific_value),
+    );
 
-  const itemsInRange = realWorldItems.filter((item) => {
-    const value = parseFloat(item.approx_value || item.scientific_value);
-    return value >= start && value <= end;
-  });
+    // Find nearest lower & higher
+    let nearestLower = null;
+    let nearestHigher = null;
 
-  if (itemsInRange.length === 0) {
-    setSelectedItems([null, null]);
-    setFilteredItems([[], []]);
-    return;
-  }
+    for (let i = 0; i < sortedItems.length; i++) {
+      const value = parseFloat(
+        sortedItems[i].approx_value || sortedItems[i].scientific_value,
+      );
+      if (value < input) {
+        nearestLower = sortedItems[i];
+      } else if (value > input) {
+        nearestHigher = sortedItems[i];
+        break; // stop at first higher
+      }
+    }
 
-  // Find low & high
-  const minItem = itemsInRange.reduce((min, curr) =>
-    parseFloat(curr.approx_value || curr.scientific_value) <
-    parseFloat(min.approx_value || min.scientific_value)
-      ? curr
-      : min
-  );
-
-  const maxItem = itemsInRange.reduce((max, curr) =>
-    parseFloat(curr.approx_value || curr.scientific_value) >
-    parseFloat(max.approx_value || max.scientific_value)
-      ? curr
-      : max
-  );
-
-  const boxes = [];
-  const filtered = [];
-  if (minItem) {
-    boxes.push(minItem);
-    filtered.push(itemsInRange);
-  }
-  if (maxItem && maxItem !== minItem) {
-    boxes.push(maxItem);
-    filtered.push(itemsInRange);
-  }
-
-  setSelectedItems(boxes);
-  setFilteredItems(filtered);
-}, [inputValue, realWorldItems]);
-
+    // Set items & dropdowns
+    setSelectedItems([nearestLower, nearestHigher]);
+    setFilteredItems([
+      nearestLower ? [nearestLower] : [],
+      nearestHigher ? [nearestHigher] : [],
+    ]);
+  }, [inputValue, realWorldItems]);
 
   return (
     <div className="space-y-10 px-4 sm:px-6 lg:px-8">
@@ -123,24 +101,24 @@ useEffect(() => {
         {/* Left Side Input */}
         <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
           <input
-  type="text"
-  value={inputValue}
-  onChange={(e) => {
-    const raw = e.target.value.match(/^-?$|^-?\d{0,3}(\.\d*)?$/)?.[0] || "";
-    if (
-      raw === "" ||
-      raw === "-" ||
-      (!isNaN(raw) && parseFloat(raw) >= -30 && parseFloat(raw) <= 310)
-    ) {
-      setInputValue(raw);
-    }
-  }}
-  placeholder="Enter value (-30 to 310)"
-  className="border p-2 rounded w-full text-left font-mono"
-/>
-
-
-
+            type="text"
+            value={inputValue}
+            onChange={(e) => {
+              const raw =
+                e.target.value.match(/^-?$|^-?\d{0,3}(\.\d*)?$/)?.[0] || "";
+              if (
+                raw === "" ||
+                raw === "-" ||
+                (!isNaN(raw) &&
+                  parseFloat(raw) >= -30 &&
+                  parseFloat(raw) <= 310)
+              ) {
+                setInputValue(raw);
+              }
+            }}
+            placeholder="Enter value (-30 to 310)"
+            className="border p-2 rounded w-full text-left font-mono"
+          />
 
           {/* Unit selector */}
           <div className="border rounded max-h-40 overflow-y-auto w-full text-sm space-y-1 bg-white">
@@ -184,7 +162,7 @@ useEffect(() => {
                           <>
                             {parseFloat(
                               selectedItem.approx_value ||
-                                selectedItem.scientific_value
+                                selectedItem.scientific_value,
                             )}{" "}
                             {selectedItem.expand?.unit?.symbol || ""}
                           </>
@@ -198,7 +176,7 @@ useEffect(() => {
                         selected={selectedItem}
                         setSelected={(val) =>
                           setSelectedItems((prev) =>
-                            prev.map((item, i) => (i === index ? val : item))
+                            prev.map((item, i) => (i === index ? val : item)),
                           )
                         }
                         items={filteredItems[index]}
@@ -206,7 +184,7 @@ useEffect(() => {
                       />
                     </div>
                   </div>
-                ) : null
+                ) : null,
               )}
             </div>
           </div>
