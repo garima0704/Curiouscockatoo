@@ -49,51 +49,71 @@ function SoundLevelConverter({ categoryId }) {
   }, [categoryId]);
 
   // Update selected items when input changes
-  useEffect(() => {
-    if (inputValue === "" || inputValue === "-") {
-      // Default: show all items in both boxes
-      setFilteredItems([realWorldItems, realWorldItems]);
-      setSelectedItems([realWorldItems[0] || null, realWorldItems[0] || null]);
-      return;
-    }
+  // Update selected items when input changes
+useEffect(() => {
+  if (inputValue === "" || inputValue === "-") {
+    // Default: show all items in both boxes
+    setFilteredItems([realWorldItems, realWorldItems]);
+    setSelectedItems([realWorldItems[0] || null, realWorldItems[0] || null]);
+    return;
+  }
 
-    const input = parseFloat(inputValue);
-    if (isNaN(input) || input < -30 || input > 310) {
-      setSelectedItems([null, null]);
-      setFilteredItems([[], []]);
-      return;
-    }
+  const input = parseFloat(inputValue);
+  if (isNaN(input) || input < -30 || input > 310) {
+    setSelectedItems([null, null]);
+    setFilteredItems([[], []]);
+    return;
+  }
 
-    // Sort all items by value
-    const sortedItems = [...realWorldItems].sort(
-      (a, b) =>
-        parseFloat(a.approx_value || a.scientific_value) -
-        parseFloat(b.approx_value || b.scientific_value),
+  // Sort all items by value
+  const sortedItems = [...realWorldItems].sort(
+    (a, b) =>
+      parseFloat(a.approx_value || a.scientific_value) -
+      parseFloat(b.approx_value || b.scientific_value),
+  );
+
+  let nearestLower = null;
+  let nearestHigher = null;
+
+  for (let i = 0; i < sortedItems.length; i++) {
+    const value = parseFloat(
+      sortedItems[i].approx_value || sortedItems[i].scientific_value,
     );
 
-    // Find nearest lower & higher
-    let nearestLower = null;
-    let nearestHigher = null;
-
-    for (let i = 0; i < sortedItems.length; i++) {
-      const value = parseFloat(
-        sortedItems[i].approx_value || sortedItems[i].scientific_value,
-      );
-      if (value < input) {
-        nearestLower = sortedItems[i];
-      } else if (value > input) {
-        nearestHigher = sortedItems[i];
-        break; // stop at first higher
-      }
+    if (value <= input) {  // <= so exact matches count as lower
+      nearestLower = sortedItems[i];
+    } else if (value > input) {
+      nearestHigher = sortedItems[i];
+      break;
     }
+  }
 
-    // Set items & dropdowns
-    setSelectedItems([nearestLower, nearestHigher]);
-    setFilteredItems([
-      nearestLower ? [nearestLower] : [],
-      nearestHigher ? [nearestHigher] : [],
-    ]);
-  }, [inputValue, realWorldItems]);
+  // Get all items matching the nearest lower value
+  const lowerGroup = nearestLower
+    ? sortedItems.filter(
+        (item) =>
+          parseFloat(item.approx_value || item.scientific_value) ===
+          parseFloat(nearestLower.approx_value || nearestLower.scientific_value),
+      )
+    : [];
+
+  // Get all items matching the nearest higher value
+  const higherGroup = nearestHigher
+    ? sortedItems.filter(
+        (item) =>
+          parseFloat(item.approx_value || item.scientific_value) ===
+          parseFloat(nearestHigher.approx_value || nearestHigher.scientific_value),
+      )
+    : [];
+
+  // Set the selected items and dropdown lists
+  setSelectedItems([
+    lowerGroup.length ? lowerGroup[0] : null,
+    higherGroup.length ? higherGroup[0] : null,
+  ]);
+  setFilteredItems([lowerGroup, higherGroup]);
+}, [inputValue, realWorldItems]);
+
 
   return (
     <div className="space-y-10 px-4 sm:px-6 lg:px-8">
