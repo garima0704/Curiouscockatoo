@@ -15,7 +15,7 @@ function AnalyticsTracker() {
     }
   }, [location]);
 
-  return null; // doesn’t render anything
+  return null;
 }
 
 export default AnalyticsTracker;

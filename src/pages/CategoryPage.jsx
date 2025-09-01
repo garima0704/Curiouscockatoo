@@ -103,8 +103,32 @@ function CategoryPage({ categoryName }) {
                 {category?.name}
               </h1>
           </section>
-
-          {/* Auxiliary Section */}
+		  
+          {/* Main Converter */}
+          <section>
+		  {total > 0 && (
+            <h2
+              className="text-3xl font-bold mb-6 text-center"
+              style={{ color: theme?.primary }}
+            >
+              Main Calculation
+            </h2>
+		  )}
+            <div
+              className="p-6 rounded-lg shadow space-y-4"
+              style={{ backgroundColor: theme?.surface }}
+            >
+              {topNote && (
+                <div
+                  className="prose max-w-none"
+                  dangerouslySetInnerHTML={{ __html: topNote }}
+                />
+              )}
+              <Converter categoryId={categoryId} />
+            </div>
+          </section>
+		  
+		  {/* Auxiliary Section */}
           {total > 0 && (
             <section className="py-6 -mt-6">
               <h2
@@ -139,30 +163,6 @@ function CategoryPage({ categoryName }) {
               </div>
             </section>
           )}
-
-          {/* Main Converter */}
-          <section>
-		  {total > 0 && (
-            <h2
-              className="text-3xl font-bold mb-6 text-center"
-              style={{ color: theme?.primary }}
-            >
-              Main Calculation
-            </h2>
-		  )}
-            <div
-              className="p-6 rounded-lg shadow space-y-4"
-              style={{ backgroundColor: theme?.surface }}
-            >
-              {topNote && (
-                <div
-                  className="prose max-w-none"
-                  dangerouslySetInnerHTML={{ __html: topNote }}
-                />
-              )}
-              <Converter categoryId={categoryId} />
-            </div>
-          </section>
 
           {/* Fun Facts */}
           <section>
