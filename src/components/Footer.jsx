@@ -1,8 +1,10 @@
 import React from "react";
 import { useTheme } from "../context/ThemeContext"; 
+import { useTranslation } from "react-i18next";
 
 export default function Footer() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <footer
@@ -10,10 +12,10 @@ export default function Footer() {
       style={{
         backgroundColor: theme?.surface || "white",
         color: theme?.text || "#4B5563",
-        fontFamily: theme?.font_family_main || "'Poppins', sans-serif",
+        fontFamily: theme?.font || "'Poppins', sans-serif",
       }}
     >
-      &copy; {new Date().getFullYear()} Curious Cockatoo. All rights reserved.
+      &copy; {new Date().getFullYear()} Curious Cockatoo. {t("footer.rights")}
     </footer>
   );
 }

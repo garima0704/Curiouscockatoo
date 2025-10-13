@@ -6,7 +6,7 @@ import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 
-function AuxiliaryConverter({ categoryId }) {
+function AuxiliaryConverter({ categoryId, lang = "en" }) {
   const theme = useTheme();
   const [units, setUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
@@ -23,59 +23,59 @@ function AuxiliaryConverter({ categoryId }) {
       if (!categoryId) return;
 
       try {
+        // 1️⃣ Fetch units with language-specific names
         const unitList = await pb.collection("units").getFullList({
           filter: `category = "${categoryId}"`,
         });
 
-        const sortedUnits = unitList.sort(
-          (a, b) => a.to_base_factor - b.to_base_factor,
-        );
-        setUnits(sortedUnits);
+        const sortedUnits = unitList.sort((a, b) => a.to_base_factor - b.to_base_factor);
 
-        if (sortedUnits.length > 0) {
-          setFromUnit(sortedUnits[0].id);
-          setToUnit(sortedUnits[0].id);
+        // Map unit names based on language
+        const localizedUnits = sortedUnits.map((u) => ({
+          ...u,
+          name: u[`name_${lang}`] || u.name, // e.g., name_es
+        }));
+
+        setUnits(localizedUnits);
+        if (localizedUnits.length > 0) {
+          setFromUnit(localizedUnits[0].id);
+          setToUnit(localizedUnits[0].id);
         }
 
+        // 2️⃣ Fetch real-world items with language-specific names
         const realItems = await pb.collection("realworld_items").getFullList({
           filter: `category = "${categoryId}"`,
           expand: "unit",
         });
 
-        // Split forced-last items from normal
-        const forcedItems = realItems.filter(
-          (i) => i.force_last_position === true,
-        );
-        const normalItems = realItems.filter(
-          (i) => i.force_last_position !== true,
-        );
+        const localizedItems = realItems.map((item) => ({
+          ...item,
+          name: item[`name_${lang}`] || item.name,
+        }));
 
-        // Sort normal items by value
+        // Split forced-last items from normal
+        const forcedItems = localizedItems.filter((i) => i.force_last_position === true);
+        const normalItems = localizedItems.filter((i) => i.force_last_position !== true);
+
         const sortedNormal = normalItems.sort((a, b) => {
           const aVal =
             typeof a.approx_value === "string"
               ? parseScientific(a.approx_value)
-              : (a.approx_value ?? a.scientific_value ?? 0);
+              : a.approx_value ?? a.scientific_value ?? 0;
           const bVal =
             typeof b.approx_value === "string"
               ? parseScientific(b.approx_value)
-              : (b.approx_value ?? b.scientific_value ?? 0);
+              : b.approx_value ?? b.scientific_value ?? 0;
           return aVal - bVal;
         });
 
-        // Merge and map
         const sortedReal = [...sortedNormal, ...forcedItems].map((item) => {
           const sciVal = parseScientific(item.scientific_value);
-          return {
-            ...item,
-            exponent: sciVal ? Math.floor(Math.log10(sciVal)) : null,
-          };
+          return { ...item, exponent: sciVal ? Math.floor(Math.log10(sciVal)) : null };
         });
 
-        // Distribute blank cards (if any)
         const withBlanks = distributeBlankCards(sortedReal, 9);
 
-        // Move any forced item to end again (in case blank shifting affects it)
         const final = [...withBlanks];
         const index = final.findIndex((i) => i.force_last_position === true);
         if (index !== -1) {
@@ -91,7 +91,7 @@ function AuxiliaryConverter({ categoryId }) {
     }
 
     fetchData();
-  }, [categoryId]);
+  }, [categoryId, lang]); // 🔑 Added lang dependency
 
   const getConvertedValue = (overrideToUnit = null) => {
     const from = units.find((u) => u.id === fromUnit);
@@ -111,10 +111,7 @@ function AuxiliaryConverter({ categoryId }) {
   };
 
   return (
-    <div
-      className="flex flex-col gap-6 overflow-x-hidden"
-      style={{ fontFamily: theme?.font }}
-    >
+    <div className="flex flex-col gap-6 overflow-x-hidden" style={{ fontFamily: theme?.font }}>
       {/* Input Block */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <input
@@ -134,7 +131,7 @@ function AuxiliaryConverter({ categoryId }) {
               setInputValue(raw);
             }
           }}
-          placeholder="Enter value"
+          placeholder={lang === "es" ? "Ingrese un valor" : "Enter value"} 
           className="border p-2 rounded w-full max-w-[160px] text-gray-800"
           style={{ backgroundColor: theme?.base }}
         />

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "./pages/Home";
 import CategoryPageWrapper from "./pages/CategoryPageWrapper";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -10,8 +10,12 @@ function App() {
       <Router>
         <AnalyticsTracker />  
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/category/:categoryName" element={<CategoryPageWrapper />} />
+          {/* Redirect root "/" to default language */}
+          <Route path="/" element={<Navigate to="/en" />} />
+
+          {/* All routes now include language param */}
+          <Route path="/:lang" element={<HomePage />} />
+          <Route path="/:lang/category/:categoryName" element={<CategoryPageWrapper />} />
         </Routes>
       </Router>
     </ThemeProvider>

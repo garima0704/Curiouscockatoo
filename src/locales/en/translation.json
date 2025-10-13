@@ -1,0 +1,20 @@
+{
+  "sections": {
+    "contact_us": "Contact Us",
+    "all_converters": "All Converters"
+  },
+  "contact_form": {
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "send_message": "Send Message"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "success": "Message sent successfully!",
+    "error": "Failed to send message."
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  }
+}
