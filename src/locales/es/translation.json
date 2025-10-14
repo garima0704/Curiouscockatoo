@@ -15,6 +15,9 @@
 	"enter_value": "Ingrese un valor",
 	"enter_value_between_1_to_6": "Ingrese un valor entre 1 y 6"
   },
+  "error": {
+  "please_enter_a_number_between_1_and_6": "Por favor, introduce un número entre 1 y 6."
+  },
   "prefix": {
     "name": "Nombre",
     "symbol": "Símbolo",

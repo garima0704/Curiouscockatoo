@@ -105,7 +105,7 @@ function RefractiveIndexConverter({ categoryId, lang = "en" }) {
                   setError("");
                 } else {
                   setInputValue(val);
-                  setError("Please enter a number between 1 and 6.");
+                  setError(t("error.please_enter_a_number_between_1_and_6"));
                 }
               }}
             />
