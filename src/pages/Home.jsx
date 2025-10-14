@@ -18,7 +18,7 @@ export default function Home() {
   // State
   const [mainCategories, setMainCategories] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
-  const [activeMainCategory, setActiveMainCategory] = useState(null); // will store { id, slug_en, slug_es }
+  const [activeMainCategory, setActiveMainCategory] = useState(null);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [submitStatus, setSubmitStatus] = useState("");
 

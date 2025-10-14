@@ -11,7 +11,9 @@
     "general": "General",
     "scientific": "Scientific",
     "conversion": "Conversion",
-    "comparison": "Comparison"
+    "comparison": "Comparison",
+	"enter_value": "Enter value",
+	"enter_value_between_1_to_6": "Enter value between 1 to 6"
   },
   "prefix": {
     "name": "Name",
@@ -31,6 +33,8 @@
     "error": "Failed to send message."
   },
   "footer": {
-    "rights": "All rights reserved."
+    "rights": "All rights reserved.",
+	"note_label": "Note",
+    "note_text": "Some comparison figures are based on approximations, mean values, or estimates."
   }
 }

@@ -36,22 +36,25 @@ export default function Header() {
 
     // If this is a category page, fetch category for new slug
     if (pathParts[1] === "category" && pathParts[2]) {
-      const currentSlug = pathParts[2];
+  const currentSlug = decodeURIComponent(pathParts[2]);
 
-      try {
-        // Fetch category by old language slug
-        const category = await pb.collection("categories").getFirstListItem(
-          oldLang === "es"
-            ? `slug_es="${currentSlug}"`
-            : `slug_en="${currentSlug}"`
-        );
+  try {
+    // Fetch category using current language slug
+    const category = await pb.collection("categories").getFirstListItem(
+      oldLang === "es"
+        ? `slug_es="${currentSlug}"`
+        : `slug_en="${currentSlug}"`
+    );
 
-        // Replace slug with new language slug
-        pathParts[2] = newLang === "es" ? category.slug_es : category.slug_en;
-      } catch (err) {
-        console.error("Error fetching category for language switch:", err);
-      }
-    }
+    // Use target language slug
+    const targetSlug = newLang === "es" ? category.slug_es : category.slug_en;
+
+    // Ensure it's URI encoded
+    pathParts[2] = encodeURIComponent(targetSlug);
+  } catch (err) {
+    console.error("Error fetching category for language switch:", err);
+  }
+}
 
     navigate("/" + pathParts.join("/"), { replace: true });
   };

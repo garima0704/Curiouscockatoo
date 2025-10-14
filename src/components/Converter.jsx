@@ -11,9 +11,12 @@ import AngleConverter from "./AngleConverter";
 import SoundLevelConverter from "./SoundLevelConverter";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
+import { useTranslation } from "react-i18next";
+
 
 function Converter({ categoryId, lang = "en" }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const primaryColor = theme?.primary || "#2b66e6";
   const [units, setUnits] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -199,7 +202,7 @@ function Converter({ categoryId, lang = "en" }) {
                   setInputValue(raw);
                 }
               }}
-              placeholder="Enter value"
+              placeholder={t("terms.enter_value")}
               className="border p-2 rounded w-full text-left font-mono"
             />
           </div>
@@ -225,7 +228,7 @@ function Converter({ categoryId, lang = "en" }) {
           {units.length > 1 && selectedUnits.length > 0 && (
             <div className="mx-auto" style={{ maxWidth: "52rem" }}>
               <div className="text-center text-xl font-bold text-gray-700 mb-2">
-                Conversion
+                {t("terms.conversion")}
               </div>
 
               <div
@@ -264,7 +267,7 @@ function Converter({ categoryId, lang = "en" }) {
                             )
                           }
                         >
-                          General
+                          {t("terms.general")}
                         </button>
                         <button
                           aria-label="Switch to Scientific view"
@@ -285,7 +288,7 @@ function Converter({ categoryId, lang = "en" }) {
                             )
                           }
                         >
-                          Scientific
+                          {t("terms.scientific")}
                         </button>
                       </div>
 
@@ -342,7 +345,7 @@ function Converter({ categoryId, lang = "en" }) {
           {realWorldItems.length > 0 && (
             <div>
               <div className="text-center text-xl font-bold text-gray-700 mb-2">
-                Comparison
+                {t("terms.comparison")}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {selectedItems.map((selectedItem, index) => (
@@ -371,7 +374,7 @@ function Converter({ categoryId, lang = "en" }) {
                           )
                         }
                       >
-                        General
+                        {t("terms.general")}
                       </button>
 
                       <button
@@ -393,7 +396,7 @@ function Converter({ categoryId, lang = "en" }) {
                           )
                         }
                       >
-                        Scientific
+                        {t("terms.scientific")}
                       </button>
                     </div>
 

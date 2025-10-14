@@ -30,12 +30,13 @@ function CategoryPage({ lang, categorySlug }) {
       try {
         if (!categorySlug) return;
 
+        const decodedSlug = decodeURIComponent(categorySlug); 
         const mainCategory = await pb.collection("categories").getFirstListItem(
-          lang === "es"
-            ? `slug_es="${categorySlug}"`
-            : `slug_en="${categorySlug}"`,
-          { expand: "auxiliary" }
-        );
+        lang === "es"
+        ? `slug_es="${decodedSlug}"` // use decoded slug
+        : `slug_en="${decodedSlug}"`,
+        { expand: "auxiliary" }
+       );
 
         setCategory(mainCategory);
         setCategoryId(mainCategory.id);
@@ -147,7 +148,7 @@ function CategoryPage({ lang, categorySlug }) {
               {t("sections.fun_facts")}
             </h2>
             <div className="px-6 py-6 rounded-lg shadow" style={{ backgroundColor: theme?.surface }}>
-              <FunFacts categoryId={categoryId} />
+              <FunFacts categoryId={categoryId} lang={lang} />
             </div>
           </section>
 

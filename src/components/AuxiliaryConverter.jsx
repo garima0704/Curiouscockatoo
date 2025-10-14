@@ -5,9 +5,11 @@ import { formatNumber } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
+import { useTranslation } from "react-i18next";
 
 function AuxiliaryConverter({ categoryId, lang = "en" }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [units, setUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -131,7 +133,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
               setInputValue(raw);
             }
           }}
-          placeholder={lang === "es" ? "Ingrese un valor" : "Enter value"} 
+          placeholder={t("terms.enter_value")}
           className="border p-2 rounded w-full max-w-[160px] text-gray-800"
           style={{ backgroundColor: theme?.base }}
         />
@@ -158,7 +160,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
           style={{ backgroundColor: theme?.box }}
         >
           <div className="text-center text-lg font-semibold mb-2">
-            Conversion
+            {t("terms.conversion")}
           </div>
 
           {/* Toggle Buttons */}
@@ -171,7 +173,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
               }}
               onClick={() => setConversionToggle(false)}
             >
-              General
+              {t("terms.general")}
             </button>
             <button
               className={`px-4 py-1 rounded-r ${conversionToggle ? "text-white" : "text-black border"}`}
@@ -181,7 +183,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
               }}
               onClick={() => setConversionToggle(true)}
             >
-              Scientific
+              {t("terms.scientific")}
             </button>
           </div>
 
@@ -223,7 +225,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
           style={{ backgroundColor: theme?.box }}
         >
           <div className="text-center text-lg font-semibold mb-2">
-            Comparison
+            {t("terms.comparison")}
           </div>
           <div className="flex justify-center gap-2 mb-2">
             <button
@@ -234,7 +236,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
               }}
               onClick={() => setComparisonToggle(false)}
             >
-              General
+              {t("terms.general")}
             </button>
             <button
               className={`px-4 py-1 rounded-r ${comparisonToggle ? "text-white" : "text-black border"}`}
@@ -244,7 +246,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
               }}
               onClick={() => setComparisonToggle(true)}
             >
-              Scientific
+              {t("terms.scientific")}
             </button>
           </div>
 		  

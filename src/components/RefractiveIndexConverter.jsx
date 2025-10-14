@@ -5,9 +5,11 @@ import { useTheme } from "../context/ThemeContext";
 import { formatNumber } from "../utils/formatNumber";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
+import { useTranslation } from "react-i18next";
 
-function RefractiveIndexConverter({ categoryId }) {
+function RefractiveIndexConverter({ categoryId, lang = "en" }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const primaryColor = theme?.primary || "#2b66e6";
 
   const [inputValue, setInputValue] = useState("");
@@ -89,7 +91,7 @@ function RefractiveIndexConverter({ categoryId }) {
             <input
               type="text"
               inputMode="decimal"
-              placeholder="Enter value between 1 to 6"
+              placeholder={t("terms.enter_value_between_1_to_6")}
               className={`border p-2 rounded w-full text-center font-mono ${
                 error ? "border-red-500" : "border-gray-300"
               }`}
@@ -118,7 +120,7 @@ function RefractiveIndexConverter({ categoryId }) {
           {realWorldItems.length > 0 && (
             <>
               <div className="text-center text-xl font-bold text-gray-700 mb-2">
-                Comparison
+                {t("terms.comparison")}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {selectedItems.map((selectedItem, index) => (
@@ -147,7 +149,7 @@ function RefractiveIndexConverter({ categoryId }) {
                           )
                         }
                       >
-                        General
+                        {t("terms.general")}
                       </button>
 
                       <button
@@ -168,7 +170,7 @@ function RefractiveIndexConverter({ categoryId }) {
                           )
                         }
                       >
-                        Scientific
+                        {t("terms.scientific")}
                       </button>
                     </div>
 
