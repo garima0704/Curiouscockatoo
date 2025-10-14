@@ -1,11 +1,28 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import CategoryPage from "./CategoryPage";
 
-function CategoryPageWrapper() {
-  const { categoryName } = useParams();
+// Allowed languages
+const SUPPORTED_LANGS = ["en", "es"];
 
-  return <CategoryPage categoryName={decodeURIComponent(categoryName)} />;
+function CategoryPageWrapper() {
+  const { lang, categorySlug } = useParams();
+
+  // Redirect to default language if lang is not supported
+  if (!SUPPORTED_LANGS.includes(lang)) {
+    return <Navigate to="/en" replace />;
+  }
+
+  if (!categorySlug) {
+    return <div className="text-center py-10">Category not found</div>;
+  }
+
+  return (
+    <CategoryPage
+      lang={lang}
+      categorySlug={decodeURIComponent(categorySlug)}
+    />
+  );
 }
 
 export default CategoryPageWrapper;

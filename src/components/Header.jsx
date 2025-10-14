@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import pb from "../utils/pocketbaseClient"; // make sure this import exists
 
 export default function Header() {
   const theme = useTheme();
   const [scrolled, setScrolled] = useState(false);
-  const { i18n } = useTranslation(); 
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,13 +20,40 @@ export default function Header() {
   }, []);
 
   // Function to change language and update URL
-  const changeLanguage = (newLang) => {
+  const changeLanguage = async (newLang) => {
+    const oldLang = i18n.language; // store current language
     i18n.changeLanguage(newLang);
     localStorage.setItem("lang", newLang);
 
-    // Replace the current language in the URL with the new language
-    const pathParts = location.pathname.split("/").slice(2); // remove old lang
-    navigate(`/${newLang}/${pathParts.join("/")}`);
+    const pathParts = location.pathname.split("/").slice(1); // remove leading "/"
+
+    // Replace language in path
+    if (pathParts[0] === "en" || pathParts[0] === "es") {
+      pathParts[0] = newLang;
+    } else {
+      pathParts.unshift(newLang);
+    }
+
+    // If this is a category page, fetch category for new slug
+    if (pathParts[1] === "category" && pathParts[2]) {
+      const currentSlug = pathParts[2];
+
+      try {
+        // Fetch category by old language slug
+        const category = await pb.collection("categories").getFirstListItem(
+          oldLang === "es"
+            ? `slug_es="${currentSlug}"`
+            : `slug_en="${currentSlug}"`
+        );
+
+        // Replace slug with new language slug
+        pathParts[2] = newLang === "es" ? category.slug_es : category.slug_en;
+      } catch (err) {
+        console.error("Error fetching category for language switch:", err);
+      }
+    }
+
+    navigate("/" + pathParts.join("/"), { replace: true });
   };
 
   return (

@@ -1,7 +1,23 @@
 {
   "sections": {
     "contact_us": "Contact Us",
-    "all_converters": "All Converters"
+    "all_converters": "All Converters",
+	"main_calculation": "Main Calculation",
+    "auxiliary_calculation": "Auxiliary Calculation",
+    "fun_facts": "Fun Facts",
+    "prefixes": "Prefixes"
+  },
+  "terms": {
+    "general": "General",
+    "scientific": "Scientific",
+    "conversion": "Conversion",
+    "comparison": "Comparison"
+  },
+  "prefix": {
+    "name": "Name",
+    "symbol": "Symbol",
+    "multiplier": "Multiplier",
+    "description": "Description"
   },
   "contact_form": {
     "name": "Name",

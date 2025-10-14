@@ -1,14 +1,30 @@
 {
   "sections": {
     "all_converters": "Todos los Convertidores",
-    "contact_us": "Contáctanos"
+    "contact_us": "Contáctanos",
+	"main_calculation": "Cálculo Principal",
+    "auxiliary_calculation": "Cálculo Auxiliar",
+    "fun_facts": "Datos Curiosos",
+    "prefixes": "Prefijos"
+  },
+  "terms": {
+    "general": "General",
+    "scientific": "Notación Científica",
+    "conversion": "Conversión",
+    "comparison": "Comparación"
+  },
+  "prefix": {
+    "name": "Nombre",
+    "symbol": "Símbolo",
+    "multiplier": "Multiplicador",
+    "description": "Descripción"
   },
   "contact_form": {
   "name": "Nombre",
   "email": "Correo electrónico",
   "message": "Mensaje",
   "send_message": "Enviar mensaje"
-},
+  },
   "messages": {
     "loading": "Cargando convertidor...",
     "success": "¡Mensaje enviado con éxito!",

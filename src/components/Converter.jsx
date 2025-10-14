@@ -12,7 +12,7 @@ import SoundLevelConverter from "./SoundLevelConverter";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
 
-function Converter({ categoryId }) {
+function Converter({ categoryId, lang = "en" }) {
   const theme = useTheme();
   const primaryColor = theme?.primary || "#2b66e6";
   const [units, setUnits] = useState([]);
@@ -22,32 +22,24 @@ function Converter({ categoryId }) {
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
-  const [comparisonToggles, setComparisonToggles] = useState([
-    false,
-    false,
-    false,
-  ]);
-  const [conversionToggles, setConversionToggles] = useState([
-    false,
-    false,
-    false,
-  ]);
+  const [comparisonToggles, setComparisonToggles] = useState([false, false, false]);
+  const [conversionToggles, setConversionToggles] = useState([false, false, false]);
   const [categoryInfo, setCategoryInfo] = useState(null);
 
+  // Fetch units and category info
   useEffect(() => {
+    if (!categoryId) return;
+
     const fetchData = async () => {
       try {
         const [unitList, category] = await Promise.all([
-          pb
-            .collection("units")
-            .getFullList({ filter: `category = "${categoryId}"` }),
+          pb.collection("units").getFullList({ filter: `category = "${categoryId}"` }),
           pb.collection("categories").getOne(categoryId),
         ]);
+
         setCategoryInfo(category);
 
-        const sortedUnits = unitList.sort(
-          (a, b) => a.to_base_factor - b.to_base_factor,
-        );
+        const sortedUnits = unitList.sort((a, b) => a.to_base_factor - b.to_base_factor);
         setUnits(sortedUnits);
 
         const defaultFromUnit = sortedUnits[0]?.id || "";
@@ -63,10 +55,14 @@ function Converter({ categoryId }) {
         console.error("Fetch error:", err);
       }
     };
-    if (categoryId) fetchData();
+
+    fetchData();
   }, [categoryId]);
 
+  // Fetch real-world items
   useEffect(() => {
+    if (!categoryId) return;
+
     const fetchRealWorldItems = async () => {
       const response = await pb.collection("realworld_items").getFullList({
         filter: `category = "${categoryId}"`,
@@ -75,133 +71,107 @@ function Converter({ categoryId }) {
 
       const withExponents = response.map((item) => {
         const value = parseFloat(item.scientific_value);
-        const exponent = isNaN(value)
-          ? null
-          : Math.floor(Math.log10(Math.abs(value)));
+        const exponent = isNaN(value) ? null : Math.floor(Math.log10(Math.abs(value)));
         return { ...item, exponent };
       });
 
-      // Helper to check if approx_value or scientific_value is valid non-zero
       const isValidValue = (item) => {
         const approx = parseFloat(item.approx_value);
         const sci = parseFloat(item.scientific_value);
         return (approx && approx !== 0) || (sci && sci !== 0);
       };
 
-      // Separate forced-last-position items with invalid zero values
       const zeroForceLastItems = withExponents.filter(
-        (item) => item.force_last_position && !isValidValue(item),
+        (item) => item.force_last_position && !isValidValue(item)
       );
 
-      // Filter real items to exclude zero-value forced last items
       const filteredRealItems = withExponents.filter(
-        (item) => !(item.force_last_position && !isValidValue(item)),
+        (item) => !(item.force_last_position && !isValidValue(item))
       );
 
-      const safeItems = filteredRealItems.filter(
-        (item) => item.exponent !== null && !isNaN(item.exponent),
-      );
-
+      const safeItems = filteredRealItems.filter((item) => item.exponent !== null && !isNaN(item.exponent));
       const enrichedItems = distributeBlankCards(safeItems, 9);
 
-      // Sort items with updated logic, only consider valid forced last items
       enrichedItems.sort((a, b) => {
         const aForce = a.force_last_position && isValidValue(a);
         const bForce = b.force_last_position && isValidValue(b);
-
         if (aForce && !bForce) return 1;
         if (!aForce && bForce) return -1;
-
         if (a.power !== b.power) return a.power - b.power;
-
         const aApprox = a.approx_value ?? Infinity;
         const bApprox = b.approx_value ?? Infinity;
-
         return aApprox - bApprox;
       });
 
-      // Append the zero-value forced last items at the very end
-      const finalItems = [...enrichedItems, ...zeroForceLastItems].sort(
-        (a, b) => a.power - b.power,
-      );
+      const finalItems = [...enrichedItems, ...zeroForceLastItems].sort((a, b) => a.power - b.power);
 
       setRealWorldItems(finalItems);
 
-      // Set default selectedItems (first 3 real items ignoring blanks)
       const realItems = finalItems.filter((item) => item.type !== "blank");
-
-      const defaultSelected = [
-        realItems[0] || null,
-        realItems[1] || null,
-        realItems[2] || null,
-      ];
-
-      setSelectedItems(defaultSelected);
+      setSelectedItems([realItems[0] || null, realItems[1] || null, realItems[2] || null]);
     };
-    if (categoryId) fetchRealWorldItems();
+
+    fetchRealWorldItems();
   }, [categoryId]);
 
+  // Update default conversion targets when fromUnit changes
   useEffect(() => {
     if (units.length > 1 && fromUnit) {
-      const defaultConversions = units
-        .filter((u) => u.id !== fromUnit)
-        .slice(0, 3)
-        .map((u) => u.id);
+      const defaultConversions = units.filter((u) => u.id !== fromUnit).slice(0, 3).map((u) => u.id);
       setSelectedUnits(defaultConversions);
     }
   }, [fromUnit, units]);
 
-  // Delegete to their respective category page
-  const categoryName = categoryInfo?.name.toLowerCase();
+  // Get category name safely with language support
+  const categoryName = (
+    categoryInfo?.[`name_${lang}`] ||
+    categoryInfo?.name_en ||
+    categoryInfo?.name_es ||
+    ""
+  ).toLowerCase();
+
+  // Specialized converters
   if (categoryName === "mole") return <MoleConverter categoryId={categoryId} />;
   if (categoryName === "temperature") return <TemperatureConverter categoryId={categoryId} />;
   if (categoryName === "refractive index") return <RefractiveIndexConverter categoryId={categoryId} />;
   if (categoryName === "angle") return <AngleConverter categoryId={categoryId} />;
   if (categoryName === "sound level") return <SoundLevelConverter categoryId={categoryId} />;
 
+  // Conversion function
   const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
     const to = units.find((u) => u.id === toUnitId);
     if (!from || !to || !inputValue) return null;
 
     const input = parseFloat(inputValue);
-
-    // Safely handle numeric or object format
-    const fromFactor = parseFloat(
-      from.to_base_factor?.value ?? from.to_base_factor,
-    );
+    const fromFactor = parseFloat(from.to_base_factor?.value ?? from.to_base_factor);
     const toFactor = parseFloat(to.to_base_factor?.value ?? to.to_base_factor);
-
     if (isNaN(fromFactor) || isNaN(toFactor)) return null;
 
     const baseValue = input * fromFactor;
     return baseValue / toFactor;
   };
 
-  const getUnitById = (id) => units.find((u) => u.id === id);
-
   const getComparisonValue = (item) => {
     if (!item || !inputValue) return null;
-
     const from = units.find((u) => u.id === fromUnit);
     if (!from) return null;
 
     const input = parseFloat(inputValue);
     const baseValue = input * from.to_base_factor;
 
-    // Use fallback logic: expression_value > approx_value > scientific_value
     const comparisonValueRaw =
       (item.expression_value && parseFloat(item.expression_value)) ||
       (item.approx_value && parseFloat(item.approx_value)) ||
       (item.scientific_value && parseFloat(item.scientific_value));
 
     if (!comparisonValueRaw || isNaN(comparisonValueRaw)) return null;
-
     return baseValue / comparisonValueRaw;
   };
 
   return (
     <div className="space-y-10 px-4 sm:px-6 lg:px-8">
+      {/* Top Notes */}
       {categoryInfo?.top_notes && (
         <div
           className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded text-sm text-gray-800 mb-6"

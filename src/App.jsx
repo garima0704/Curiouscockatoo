@@ -11,11 +11,13 @@ function App() {
         <AnalyticsTracker />  
         <Routes>
           {/* Redirect root "/" to default language */}
-          <Route path="/" element={<Navigate to="/en" />} />
+          <Route path="/" element={<Navigate to="/en" replace />} />
 
-          {/* All routes now include language param */}
+          {/* Home page per language */}
           <Route path="/:lang" element={<HomePage />} />
-          <Route path="/:lang/category/:categoryName" element={<CategoryPageWrapper />} />
+
+          {/* Category pages per language */}
+          <Route path="/:lang/category/:categorySlug" element={<CategoryPageWrapper />} />
         </Routes>
       </Router>
     </ThemeProvider>
