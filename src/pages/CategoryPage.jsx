@@ -41,8 +41,8 @@ function CategoryPage({ lang, categorySlug }) {
         setCategory(mainCategory);
         setCategoryId(mainCategory.id);
 
-        // Parse top note
-        const rawTopNote = mainCategory.top_note || "";
+       // Parse top note (language-specific)
+        const rawTopNote = mainCategory[`top_note_${lang}`] || mainCategory.top_note || "";
         const parser = new DOMParser();
         const htmlDoc = parser.parseFromString(rawTopNote, "text/html");
         const visibleText = htmlDoc.body.textContent?.trim();
@@ -183,7 +183,9 @@ function CategoryPage({ lang, categorySlug }) {
                             </sup>
                           </span>
                         </td>
-                        <td className="px-4 py-2 whitespace-pre-line break-words">{prefix.description}</td>
+                        <td className="px-4 py-2 whitespace-pre-line break-words">
+                          {lang === "es" ? prefix.description_es || prefix.description : prefix.description_en || prefix.description}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -1,11 +1,14 @@
 // RealWorldGrid.jsx
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatNumber } from "../utils/formatNumber";
 
 const ITEMS_PER_PAGE = 5;
 
 function RealWorldGrid({ items, inputValue }) {
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const { i18n } = useTranslation();
+  const lang = i18n.language || "en";
 
   const sorted = [...items].sort((a, b) => a.scientific_value - b.scientific_value);
   const visibleItems = sorted.slice(0, visibleCount);
@@ -19,6 +22,17 @@ function RealWorldGrid({ items, inputValue }) {
           const result = inputValue && item.scientific_value
             ? inputValue / item.scientific_value
             : null;
+			
+			// Pick name and notes based on language
+          const displayName =
+            lang === "es"
+              ? item.name_es || item.name_en || item.name
+              : item.name_en || item.name;
+
+          const displayNotes =
+            lang === "es"
+              ? item.notes_es || item.notes_en || item.notes
+              : item.notes_en || item.notes;
 
           return (
             <div key={item.id} className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">

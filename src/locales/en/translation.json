@@ -13,7 +13,14 @@
     "conversion": "Conversion",
     "comparison": "Comparison",
 	"enter_value": "Enter value",
-	"enter_value_between_1_to_6": "Enter value between 1 to 6"
+	"enter_value_between_1_to_6": "Enter value between 1 to 6",
+	"arc_length": "Arc Length",
+	"distance": "Distance",
+	"reference": "Reference",
+	"enter_value_range_30_310": "Enter value (-30 to 310)"
+  },
+  "error": {
+	  "please_enter_a_number_between_1_and_6": "Please enter a number between 1 and 6."
   },
   "prefix": {
     "name": "Name",

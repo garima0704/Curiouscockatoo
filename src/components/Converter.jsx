@@ -13,11 +13,12 @@ import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
 import { useTranslation } from "react-i18next";
 
-
-function Converter({ categoryId, lang = "en" }) {
+function Converter({ categoryId, lang }) {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const activeLang = lang || i18n.language || "en";
   const primaryColor = theme?.primary || "#2b66e6";
+
   const [units, setUnits] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -29,152 +30,237 @@ function Converter({ categoryId, lang = "en" }) {
   const [conversionToggles, setConversionToggles] = useState([false, false, false]);
   const [categoryInfo, setCategoryInfo] = useState(null);
 
-  // Fetch units and category info
+  /** -------------------------------------------------
+   *  FETCH UNITS + CATEGORY  (Re-fetch on lang change)
+   * ------------------------------------------------- */
   useEffect(() => {
     if (!categoryId) return;
 
-    const fetchData = async () => {
+    const load = async () => {
       try {
         const [unitList, category] = await Promise.all([
           pb.collection("units").getFullList({ filter: `category = "${categoryId}"` }),
           pb.collection("categories").getOne(categoryId),
         ]);
 
-        setCategoryInfo(category);
+        /** CATEGORY LOCALIZATION */
+        const mappedCategory = {
+          ...category,
+          name:
+            activeLang === "es"
+              ? category.name_es || category.name_en || ""
+              : category.name_en || category.name_es || "",
+          top_notes:
+            activeLang === "es"
+              ? category.top_note_es || category.top_note_en || ""
+              : category.top_note_en || category.top_note_es || "",
+          fun_facts:
+            activeLang === "es"
+              ? category.fun_facts_es || category.fun_facts_en || ""
+              : category.fun_facts_en || category.fun_facts_es || "",
+          slug:
+            activeLang === "es"
+              ? category.slug_es || category.slug_en || ""
+              : category.slug_en || category.slug_es || "",
+        };
+        setCategoryInfo(mappedCategory);
 
-        const sortedUnits = unitList.sort((a, b) => a.to_base_factor - b.to_base_factor);
-        setUnits(sortedUnits);
+        /** UNIT LOCALIZATION + REMOVE PB DEFAULT name */
+        const mappedUnits = unitList
+          .map((u) => {
+            const localizedName =
+              activeLang === "es"
+                ? u.name_es || u.name_en || ""
+                : u.name_en || u.name_es || "";
 
-        const defaultFromUnit = sortedUnits[0]?.id || "";
-        setFromUnit(defaultFromUnit);
+            const { name, ...rest } = u; // REMOVE PB's auto `name`
 
-        // Initialize 3 conversion boxes
-        const defaultConversions = sortedUnits
-          .filter((u) => u.id !== defaultFromUnit)
+            return {
+              ...rest,
+              name: localizedName,
+            };
+          })
+          .sort((a, b) => {
+            const af = parseFloat(a.to_base_factor || 0);
+            const bf = parseFloat(b.to_base_factor || 0);
+            return af - bf;
+          });
+
+        setUnits(mappedUnits);
+
+        /** DEFAULT FROM UNIT (prefer category.base_unit) */
+        const baseUnitId = mappedCategory.base_unit;
+        const baseExists = mappedUnits.find((u) => u.id === baseUnitId);
+        const defaultFrom = baseExists ? baseUnitId : mappedUnits[0]?.id;
+
+        setFromUnit(defaultFrom);
+
+        /** RESET 3 TARGET UNITS */
+        const defaults = mappedUnits
+          .filter((u) => u.id !== defaultFrom)
           .slice(0, 3)
           .map((u) => u.id);
-        setSelectedUnits(defaultConversions);
-      } catch (err) {
-        console.error("Fetch error:", err);
+
+        setSelectedUnits(defaults);
+      } catch (e) {
+        console.error("Unit fetch error:", e);
       }
     };
 
-    fetchData();
-  }, [categoryId]);
+    load();
+  }, [categoryId, activeLang]);
 
-  // Fetch real-world items
+  /** -------------------------------------------------
+   *  FETCH REAL WORLD ITEMS (Re-fetch on lang change)
+   * ------------------------------------------------- */
   useEffect(() => {
     if (!categoryId) return;
 
-    const fetchRealWorldItems = async () => {
-      const response = await pb.collection("realworld_items").getFullList({
-        filter: `category = "${categoryId}"`,
-        expand: "unit",
-      });
+    const loadReal = async () => {
+      try {
+        const list = await pb.collection("realworld_items").getFullList({
+          filter: `category = "${categoryId}"`,
+          expand: "unit",
+        });
 
-      const withExponents = response.map((item) => {
-        const value = parseFloat(item.scientific_value);
-        const exponent = isNaN(value) ? null : Math.floor(Math.log10(Math.abs(value)));
-        return { ...item, exponent };
-      });
+        /** LOCALIZATION of items */
+        const localized = list.map((item) => ({
+          ...item,
+          name:
+            activeLang === "es"
+              ? item.name_es || item.name_en || ""
+              : item.name_en || item.name_es || "",
+          notes:
+            activeLang === "es"
+              ? item.notes_es || item.notes_en || ""
+              : item.notes_en || item.notes_es || "",
+          expression:
+            activeLang === "es"
+              ? item.expression_es || item.expression_en || ""
+              : item.expression_en || item.expression_es || "",
+        }));
 
-      const isValidValue = (item) => {
-        const approx = parseFloat(item.approx_value);
-        const sci = parseFloat(item.scientific_value);
-        return (approx && approx !== 0) || (sci && sci !== 0);
-      };
+        /** NUMERIC + EXPONENT detection */
+        const withExp = localized.map((item) => {
+          let num = NaN;
 
-      const zeroForceLastItems = withExponents.filter(
-        (item) => item.force_last_position && !isValidValue(item)
-      );
+          if (item.scientific_value) num = parseFloat(item.scientific_value);
+          if ((!num || isNaN(num)) && item.approx_value) num = parseFloat(item.approx_value);
+          if ((!num || isNaN(num)) && item.expression) {
+            const parsed = parseScientific(item.expression);
+            if (!isNaN(parsed)) num = parsed;
+          }
 
-      const filteredRealItems = withExponents.filter(
-        (item) => !(item.force_last_position && !isValidValue(item))
-      );
+          const exponent =
+            num && !isNaN(num) && num !== 0 ? Math.floor(Math.log10(Math.abs(num))) : null;
 
-      const safeItems = filteredRealItems.filter((item) => item.exponent !== null && !isNaN(item.exponent));
-      const enrichedItems = distributeBlankCards(safeItems, 9);
+          return { ...item, _num: num, exponent };
+        });
 
-      enrichedItems.sort((a, b) => {
-        const aForce = a.force_last_position && isValidValue(a);
-        const bForce = b.force_last_position && isValidValue(b);
-        if (aForce && !bForce) return 1;
-        if (!aForce && bForce) return -1;
-        if (a.power !== b.power) return a.power - b.power;
-        const aApprox = a.approx_value ?? Infinity;
-        const bApprox = b.approx_value ?? Infinity;
-        return aApprox - bApprox;
-      });
+        const valid = (item) => item._num && !isNaN(item._num) && item._num !== 0;
 
-      const finalItems = [...enrichedItems, ...zeroForceLastItems].sort((a, b) => a.power - b.power);
+        const forceZero = withExp.filter((x) => x.force_last_position && !valid(x));
+        const normal = withExp.filter((x) => !(x.force_last_position && !valid(x)));
+        const safe = normal.filter((x) => x.exponent !== null);
 
-      setRealWorldItems(finalItems);
+        /** INSERT blank cards between exponent jumps */
+        const enriched = distributeBlankCards(safe, 9);
 
-      const realItems = finalItems.filter((item) => item.type !== "blank");
-      setSelectedItems([realItems[0] || null, realItems[1] || null, realItems[2] || null]);
+        enriched.sort((a, b) => {
+          const aF = a.force_last_position && valid(a);
+          const bF = b.force_last_position && valid(b);
+          if (aF && !bF) return 1;
+          if (!aF && bF) return -1;
+          return (a.exponent ?? 0) - (b.exponent ?? 0);
+        });
+
+        const finalItems = [...enriched, ...forceZero].sort(
+          (a, b) => (a.exponent ?? 0) - (b.exponent ?? 0)
+        );
+
+        setRealWorldItems(finalItems);
+
+        const firstThree = finalItems.filter((x) => x.type !== "blank").slice(0, 3);
+        setSelectedItems([firstThree[0] || null, firstThree[1] || null, firstThree[2] || null]);
+      } catch (e) {
+        console.error("Real world fetch error:", e);
+      }
     };
 
-    fetchRealWorldItems();
-  }, [categoryId]);
+    loadReal();
+  }, [categoryId, activeLang]);
 
-  // Update default conversion targets when fromUnit changes
+  /** RESET conversion options if fromUnit changes */
   useEffect(() => {
-    if (units.length > 1 && fromUnit) {
-      const defaultConversions = units.filter((u) => u.id !== fromUnit).slice(0, 3).map((u) => u.id);
-      setSelectedUnits(defaultConversions);
+    if (units.length && fromUnit) {
+      const defaults = units
+        .filter((u) => u.id !== fromUnit)
+        .slice(0, 3)
+        .map((u) => u.id);
+
+      setSelectedUnits(defaults);
     }
   }, [fromUnit, units]);
 
-  // Get category name safely with language support
-  const categoryName = (
-    categoryInfo?.[`name_${lang}`] ||
-    categoryInfo?.name_en ||
-    categoryInfo?.name_es ||
-    ""
-  ).toLowerCase();
+  /** Specialized converter routing */
+  const catSlug = categoryInfo?.slug_en?.toLowerCase() || "";
+	if (catSlug === "mole") return <MoleConverter categoryId={categoryId} />;
+	if (catSlug === "temperature") return <TemperatureConverter categoryId={categoryId} />;
+	if (catSlug === "refractive-index") return <RefractiveIndexConverter categoryId={categoryId} />;
+	if (catSlug === "angle") return <AngleConverter categoryId={categoryId} />;
+	if (catSlug === "sound-level") return <SoundLevelConverter categoryId={categoryId} />;
 
-  // Specialized converters
-  if (categoryName === "mole") return <MoleConverter categoryId={categoryId} />;
-  if (categoryName === "temperature") return <TemperatureConverter categoryId={categoryId} />;
-  if (categoryName === "refractive index") return <RefractiveIndexConverter categoryId={categoryId} />;
-  if (categoryName === "angle") return <AngleConverter categoryId={categoryId} />;
-  if (categoryName === "sound level") return <SoundLevelConverter categoryId={categoryId} />;
-
-  // Conversion function
-  const getConvertedValue = (toUnitId) => {
+  /** -----------------------
+   *   MAIN CONVERSION
+   * ----------------------- */
+  const convert = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
     const to = units.find((u) => u.id === toUnitId);
-    if (!from || !to || !inputValue) return null;
+    if (!from || !to) return null;
+    if (inputValue === "") return null;
 
-    const input = parseFloat(inputValue);
-    const fromFactor = parseFloat(from.to_base_factor?.value ?? from.to_base_factor);
-    const toFactor = parseFloat(to.to_base_factor?.value ?? to.to_base_factor);
-    if (isNaN(fromFactor) || isNaN(toFactor)) return null;
+    const x = parseFloat(inputValue);
+    if (isNaN(x)) return null;
 
-    const baseValue = input * fromFactor;
-    return baseValue / toFactor;
+    const parseF = (v) =>
+      typeof v === "object" && v?.value ? parseFloat(v.value) : parseFloat(v);
+
+    const fromF = parseF(from.to_base_factor);
+    const toF = parseF(to.to_base_factor);
+
+    if (isNaN(fromF) || isNaN(toF) || toF === 0) return null;
+    return (x * fromF) / toF;
   };
 
-  const getComparisonValue = (item) => {
-    if (!item || !inputValue) return null;
+  const compare = (item) => {
+    if (!item) return null;
+    if (inputValue === "") return null;
+
     const from = units.find((u) => u.id === fromUnit);
     if (!from) return null;
 
-    const input = parseFloat(inputValue);
-    const baseValue = input * from.to_base_factor;
+    const x = parseFloat(inputValue);
+    if (isNaN(x)) return null;
 
-    const comparisonValueRaw =
-      (item.expression_value && parseFloat(item.expression_value)) ||
-      (item.approx_value && parseFloat(item.approx_value)) ||
-      (item.scientific_value && parseFloat(item.scientific_value));
+    const parseF = (v) =>
+      typeof v === "object" && v?.value ? parseFloat(v.value) : parseFloat(v);
 
-    if (!comparisonValueRaw || isNaN(comparisonValueRaw)) return null;
-    return baseValue / comparisonValueRaw;
+    const base = x * parseF(from.to_base_factor);
+
+    let raw = NaN;
+    if (item.expression) raw = parseScientific(item.expression);
+    if ((!raw || isNaN(raw)) && item.approx_value) raw = parseFloat(item.approx_value);
+    if ((!raw || isNaN(raw)) && item.scientific_value) raw = parseFloat(item.scientific_value);
+
+    if (!raw || isNaN(raw)) return null;
+    return base / raw;
   };
 
+  /** -----------------------
+   *  RENDER
+   * ----------------------- */
   return (
     <div className="space-y-10 px-4 sm:px-6 lg:px-8">
-      {/* Top Notes */}
       {categoryInfo?.top_notes && (
         <div
           className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded text-sm text-gray-800 mb-6"
@@ -183,6 +269,7 @@ function Converter({ categoryId, lang = "en" }) {
       )}
 
       <div className="flex flex-col lg:flex-row gap-6">
+        {/* LEFT PANEL - INPUT + FROM UNIT */}
         <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
           <div className="relative w-full">
             <input
@@ -190,9 +277,9 @@ function Converter({ categoryId, lang = "en" }) {
               value={
                 isFocused || !fromUnit
                   ? inputValue
-                  : inputValue !== ""
-                    ? `${inputValue} ${units.find((u) => u.id === fromUnit)?.symbol || ""}`
-                    : ""
+                  : inputValue
+                  ? `${inputValue} ${units.find((u) => u.id === fromUnit)?.symbol || ""}`
+                  : ""
               }
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
@@ -211,10 +298,10 @@ function Converter({ categoryId, lang = "en" }) {
             {units.map((u) => (
               <div
                 key={u.id}
+                onClick={() => setFromUnit(u.id)}
                 className={`cursor-pointer p-1 rounded hover:bg-blue-100 ${
                   fromUnit === u.id ? "bg-blue-200 font-medium" : ""
                 }`}
-                onClick={() => setFromUnit(u.id)}
               >
                 {u.name} ({u.symbol})
               </div>
@@ -222,9 +309,9 @@ function Converter({ categoryId, lang = "en" }) {
           </div>
         </div>
 
+        {/* RIGHT SIDE CONTENT */}
         <div className="flex-1 space-y-10">
-          
-		  {/* Conversion */}
+          {/* Conversion */}
           {units.length > 1 && selectedUnits.length > 0 && (
             <div className="mx-auto" style={{ maxWidth: "52rem" }}>
               <div className="text-center text-xl font-bold text-gray-700 mb-2">
@@ -233,58 +320,50 @@ function Converter({ categoryId, lang = "en" }) {
 
               <div
                 className={`grid gap-6 justify-items-center
-        ${selectedUnits.length === 1 ? "grid-cols-1" : ""}
-        ${selectedUnits.length === 2 ? "grid-cols-1 sm:grid-cols-2" : ""}
-        ${selectedUnits.length >= 3 ? "md:grid-cols-3" : ""}
-      `}
+                  ${selectedUnits.length === 1 ? "grid-cols-1" : ""}
+                  ${selectedUnits.length === 2 ? "grid-cols-1 sm:grid-cols-2" : ""}
+                  ${selectedUnits.length >= 3 ? "md:grid-cols-3" : ""}
+                `}
               >
                 {selectedUnits.map((toUnitId, index) => {
                   const currentUnit = units.find((u) => u.id === toUnitId);
+
                   return (
                     <div
                       key={index}
                       className="w-full max-w-sm p-4 rounded shadow flex flex-col gap-3"
                       style={{ backgroundColor: theme?.box }}
                     >
-                      {/* Toggle buttons */}
+                      {/* General / Scientific toggle */}
                       <div className="flex justify-center gap-2">
                         <button
-                          aria-label="Switch to General view"
                           className={`px-3 py-1 rounded-l ${
-                            !conversionToggles[index]
-                              ? "text-white"
-                              : "bg-white border text-black"
+                            !conversionToggles[index] ? "text-white" : "bg-white border text-black"
                           }`}
                           style={{
                             borderColor: "#ccc",
-                            backgroundColor: !conversionToggles[index]
-                              ? primaryColor
-                              : "white",
+                            backgroundColor: !conversionToggles[index] ? primaryColor : "white",
                           }}
                           onClick={() =>
                             setConversionToggles((prev) =>
-                              prev.map((t, i) => (i === index ? false : t)),
+                              prev.map((t, i) => (i === index ? false : t))
                             )
                           }
                         >
                           {t("terms.general")}
                         </button>
+
                         <button
-                          aria-label="Switch to Scientific view"
                           className={`px-3 py-1 rounded-r ${
-                            conversionToggles[index]
-                              ? "text-white"
-                              : "bg-white border text-black"
+                            conversionToggles[index] ? "text-white" : "bg-white border text-black"
                           }`}
                           style={{
                             borderColor: "#ccc",
-                            backgroundColor: conversionToggles[index]
-                              ? primaryColor
-                              : "white",
+                            backgroundColor: conversionToggles[index] ? primaryColor : "white",
                           }}
                           onClick={() =>
                             setConversionToggles((prev) =>
-                              prev.map((t, i) => (i === index ? true : t)),
+                              prev.map((t, i) => (i === index ? true : t))
                             )
                           }
                         >
@@ -292,43 +371,35 @@ function Converter({ categoryId, lang = "en" }) {
                         </button>
                       </div>
 
-                      {/* Result */}
+                      {/* Conversion Result */}
                       <div className="overflow-x-auto max-w-full">
                         <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
-                          <div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
-                            {inputValue &&
-                            getConvertedValue(toUnitId) !== null ? (
+                          <div className="break-super break-words whitespace-normal">
+                            {inputValue && convert(toUnitId) !== null ? (
                               <>
-                                {formatNumber(
-                                  getConvertedValue(toUnitId),
-                                  conversionToggles[index],
-                                )}{" "}
+                                {formatNumber(convert(toUnitId), conversionToggles[index])}{" "}
                               </>
                             ) : null}
-                            {currentUnit?.symbol || ""}
+                            {currentUnit?.symbol}
                           </div>
                         </div>
                       </div>
 
-                      {/* Unit selection */}
+                      {/* SELECT TARGET UNIT */}
                       <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">
                         {units
                           .filter((u) => u.id !== fromUnit)
                           .map((u) => (
                             <div
                               key={u.id}
-                              className={`cursor-pointer p-1 hover:bg-blue-100 ${
-                                toUnitId === u.id
-                                  ? "bg-blue-200 font-medium"
-                                  : ""
-                              }`}
                               onClick={() =>
                                 setSelectedUnits((prev) =>
-                                  prev.map((id, i) =>
-                                    i === index ? u.id : id,
-                                  ),
+                                  prev.map((id, i) => (i === index ? u.id : id))
                                 )
                               }
+                              className={`cursor-pointer p-1 hover:bg-blue-100 ${
+                                toUnitId === u.id ? "bg-blue-200 font-medium" : ""
+                              }`}
                             >
                               {u.name} ({u.symbol})
                             </div>
@@ -348,51 +419,41 @@ function Converter({ categoryId, lang = "en" }) {
                 {t("terms.comparison")}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {selectedItems.map((selectedItem, index) => (
+                {selectedItems.map((item, index) => (
                   <div
                     key={index}
                     className="w-full p-4 rounded shadow flex flex-col gap-3"
                     style={{ backgroundColor: theme?.box }}
                   >
+                    {/* Toggles */}
                     <div className="flex justify-center gap-2">
                       <button
-                        aria-label="Switch to General view"
                         className={`px-3 py-1 rounded-l ${
-                          !comparisonToggles[index]
-                            ? "text-white"
-                            : "bg-white border text-black"
+                          !comparisonToggles[index] ? "text-white" : "bg-white border text-black"
                         }`}
                         style={{
                           borderColor: "#ccc",
-                          backgroundColor: !comparisonToggles[index]
-                            ? primaryColor
-                            : "white",
+                          backgroundColor: !comparisonToggles[index] ? primaryColor : "white",
                         }}
                         onClick={() =>
                           setComparisonToggles((prev) =>
-                            prev.map((t, i) => (i === index ? false : t)),
+                            prev.map((t, i) => (i === index ? false : t))
                           )
                         }
                       >
                         {t("terms.general")}
                       </button>
-
                       <button
-                        aria-label="Switch to Scientific view"
                         className={`px-3 py-1 rounded-r ${
-                          comparisonToggles[index]
-                            ? "text-white"
-                            : "bg-white border text-black"
+                          comparisonToggles[index] ? "text-white" : "bg-white border text-black"
                         }`}
                         style={{
                           borderColor: "#ccc",
-                          backgroundColor: comparisonToggles[index]
-                            ? primaryColor
-                            : "white",
+                          backgroundColor: comparisonToggles[index] ? primaryColor : "white",
                         }}
                         onClick={() =>
                           setComparisonToggles((prev) =>
-                            prev.map((t, i) => (i === index ? true : t)),
+                            prev.map((t, i) => (i === index ? true : t))
                           )
                         }
                       >
@@ -400,27 +461,23 @@ function Converter({ categoryId, lang = "en" }) {
                       </button>
                     </div>
 
-                    {/* Result */}
+                    {/* Comparison result */}
                     <div className="overflow-x-auto max-w-full">
                       <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
-                        <div className="break-super break-words whitespace-normal text-wrap text-balance leading-snug">
-                          {selectedItem && inputValue
-                            ? formatNumber(
-                                getComparisonValue(selectedItem),
-                                comparisonToggles[index],
-                              )
+                        <div className="break-super break-words whitespace-normal">
+                          {item && inputValue
+                            ? formatNumber(compare(item), comparisonToggles[index])
                             : ""}
                         </div>
                       </div>
                     </div>
 
-                    <div className="h-[300px] overflow-y-auto pr-1 sm:max-h-[none] max-h-[80vh]">
+                    {/* Real world items list */}
+                    <div className="h-[300px] overflow-y-auto pr-1">
                       <RealWorldBox
-                        selected={selectedItem}
-                        setSelected={(val) =>
-                          setSelectedItems((prev) =>
-                            prev.map((item, i) => (i === index ? val : item)),
-                          )
+                        selected={item}
+                        setSelected={(v) =>
+                          setSelectedItems((prev) => prev.map((x, i) => (i === index ? v : x)))
                         }
                         items={realWorldItems}
                         scientificToggle={true}
@@ -429,7 +486,7 @@ function Converter({ categoryId, lang = "en" }) {
                   </div>
                 ))}
               </div>
-              {/* Footer note goes here */}
+
               <div className="mt-4">
                 <FooterNote theme={theme} />
               </div>

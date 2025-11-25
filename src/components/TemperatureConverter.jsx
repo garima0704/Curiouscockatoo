@@ -5,9 +5,11 @@ import { formatNumber } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
+import { useTranslation } from "react-i18next";
 
-function TemperatureConverter({ categoryId }) {
+function TemperatureConverter({ categoryId, lang = "en" }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const primaryColor = theme?.primary || "#2b66e6";
   const [units, setUnits] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -235,7 +237,7 @@ function TemperatureConverter({ categoryId }) {
           {units.length > 1 && (
             <div className="mx-auto" style={{ maxWidth: "52rem" }}>
               <div className="text-center text-xl font-bold text-gray-700 mb-2">
-                Conversion
+                {t("terms.conversion")}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {selectedUnits.map((toUnitId, index) => {
@@ -262,7 +264,7 @@ function TemperatureConverter({ categoryId }) {
                             )
                           }
                         >
-                          General
+                          {t("terms.general")}
                         </button>
                         <button
                           className={`px-3 py-1 rounded-r ${
@@ -278,7 +280,7 @@ function TemperatureConverter({ categoryId }) {
                             )
                           }
                         >
-                          Scientific
+                          {t("terms.scientific")}
                         </button>
                       </div>
 
@@ -322,7 +324,7 @@ function TemperatureConverter({ categoryId }) {
           {realWorldItems.length > 0 && (
             <div>
               <div className="text-center text-xl font-bold text-gray-700 mb-2">
-                Comparison
+                {t("terms.comparison")}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {selectedItems.map((selectedItem, index) => (
@@ -346,7 +348,7 @@ function TemperatureConverter({ categoryId }) {
                           )
                         }
                       >
-                        General
+                        {t("terms.general")}
                       </button>
                       <button
                         className={`px-3 py-1 rounded-r ${
@@ -362,7 +364,7 @@ function TemperatureConverter({ categoryId }) {
                           )
                         }
                       >
-                        Scientific
+                        {t("terms.scientific")}
                       </button>
                     </div>
 
