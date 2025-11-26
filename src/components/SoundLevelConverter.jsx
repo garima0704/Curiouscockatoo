@@ -1,150 +1,26 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import pb from "../utils/pocketbaseClient";
 import RealWorldBox from "./RealWorldBox";
 import { useTheme } from "../context/ThemeContext";
-import FooterNote from "./FooterNote";
 import { useTranslation } from "react-i18next";
 
-function SoundLevelConverter({ categoryId, lang = "en" }) {
+function SoundLevelConverter({ categoryId, lang }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
-  const primaryColor = theme?.primary || "#2b66e6";
+  const activeLang = lang || i18n.language || "en";
 
-  // raw data (never localized) — used for numeric logic
   const [rawUnits, setRawUnits] = useState([]);
   const [rawItems, setRawItems] = useState([]);
-
-  // localized views derived from raw data
   const [units, setUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
-
   const [fromUnit, setFromUnit] = useState("");
   const [inputValue, setInputValue] = useState("");
-  const [selectedItems, setSelectedItems] = useState([null, null]); // selected representative items for two boxes
-  const [filteredItems, setFilteredItems] = useState([[], []]); // arrays of items inside each box
-
-  // keep i18n in sync
-  useEffect(() => {
-    i18n.changeLanguage(lang);
-  }, [lang, i18n]);
-
-  if (!i18n.isInitialized) return null;
-
-  const placeholderText = useMemo(() => t("terms.enter_value_range_30_310"), [t, lang]);
+  const [selectedItems, setSelectedItems] = useState([null, null]);
+  const [filteredItems, setFilteredItems] = useState([[], []]);
 
   /** ---------------------
-   *  FETCH RAW UNITS (only when categoryId changes)
-   *  we DON'T localize names here so numeric data stays stable
-   *  --------------------- */
-  useEffect(() => {
-    if (!categoryId) return;
-
-    const loadUnits = async () => {
-      try {
-        const unitList = await pb.collection("units").getFullList({
-          filter: `category = "${categoryId}"`,
-        });
-
-        // keep raw
-        setRawUnits(unitList || []);
-
-        // choose default fromUnit (base or first)
-        const defaultFrom = (unitList[0] && unitList[0].id) || "";
-        setFromUnit(defaultFrom);
-      } catch (err) {
-        console.error("loadUnits error", err);
-      }
-    };
-
-    loadUnits();
-  }, [categoryId]);
-
-  /** ---------------------
-   *  FETCH RAW REAL-WORLD ITEMS (only when categoryId changes)
-   *  We store raw numeric fields intact (approx_value, scientific_value, expression)
-   *  --------------------- */
-  useEffect(() => {
-    if (!categoryId) return;
-
-    const loadItems = async () => {
-      try {
-        const response = await pb.collection("realworld_items").getFullList({
-          filter: `category = "${categoryId}"`,
-          expand: "unit",
-        });
-
-        // keep only items that have numeric values (do not localize)
-        const valid = (item) => {
-          const v = item.approx_value ?? item.scientific_value;
-          // allow "0" as valid; trim strings and replace comma with dot (in case)
-          if (v == null) return false;
-          const cleaned = String(v).trim().replace(",", ".");
-          return cleaned !== "" && !isNaN(parseFloat(cleaned));
-        };
-
-        const raw = (response || []).filter(valid);
-        setRawItems(raw);
-        // init filtered/selected with raw items (localized view will update names separately)
-        setFilteredItems([raw, raw]);
-        setSelectedItems([raw[0] || null, raw[0] || null]);
-      } catch (err) {
-        console.error("loadRealWorldItems error", err);
-      }
-    };
-
-    loadItems();
-  }, [categoryId]);
-
-  /** ---------------------
-   *  LOCALIZE VIEWS WHEN lang CHANGES
-   *  Keep numeric fields the same; only change name/notes/expressions used for display
-   *  --------------------- */
-  useEffect(() => {
-    // Localize units (display label). We will build a display name that avoids duplicate symbols.
-    const localizedUnits = rawUnits.map((u) => {
-      const nameEn = u.name_en?.trim() || "";
-      const symbol = u.symbol?.toString?.() || "";
-
-      // make base name without symbol if english already contains it
-      let baseName = nameEn;
-      if (baseName.includes(`(${symbol})`)) {
-        baseName = baseName.replace(`(${symbol})`, "").trim();
-      }
-
-      const display = lang === "es" ? `(${symbol})` : `${baseName} (${symbol})`;
-
-      return {
-        ...u,
-        name: display,
-      };
-    });
-    setUnits(localizedUnits);
-
-    // Localize items (only textual fields)
-    const localizedItems = rawItems.map((it) => {
-      const name = lang === "es" ? it.name_es || it.name_en || it.name : it.name_en || it.name_es || it.name;
-      const notes = lang === "es" ? it.notes_es || it.notes_en || it.notes : it.notes_en || it.notes_es || it.notes;
-      const expression = lang === "es" ? it.expression_es || it.expression_en || it.expression : it.expression_en || it.expression_es || it.expression;
-
-      return {
-        ...it,
-        name,
-        notes,
-        expression,
-      };
-    });
-
-    setRealWorldItems(localizedItems);
-
-    // Keep filteredItems and selectedItems consistent with new localized list:
-    setFilteredItems([localizedItems, localizedItems]);
-    setSelectedItems([localizedItems[0] || null, localizedItems[0] || null]);
-  }, [lang, rawUnits, rawItems]);
-
-  /** ---------------------
-   *  HELPERS
-   *  parse numeric safely handling commas & strings
-   *  --------------------- */
+   * Helper: parse numeric value safely
+   * --------------------- */
   const numValue = (item) => {
     if (!item) return NaN;
     const raw = item.approx_value ?? item.scientific_value ?? "";
@@ -154,63 +30,133 @@ function SoundLevelConverter({ categoryId, lang = "en" }) {
   };
 
   /** ---------------------
-   *  MAIN: compute nearest lower / higher groups when input changes
-   *  - stable numeric sort
-   *  - deterministic tiebreaker on id
-   *  - group all items that share the same numeric value into same box
-   *  --------------------- */
+   * Fetch units
+   * --------------------- */
   useEffect(() => {
-    // reset for empty or dash
-    if (inputValue === "" || inputValue === "-") {
+    if (!categoryId) return;
+    const loadUnits = async () => {
+      try {
+        const unitList = await pb.collection("units").getFullList({
+          filter: `category = "${categoryId}"`,
+        });
+        setRawUnits(unitList || []);
+        setFromUnit(unitList?.[0]?.id || "");
+      } catch (err) {
+        console.error("loadUnits error", err);
+      }
+    };
+    loadUnits();
+  }, [categoryId]);
+
+  /** ---------------------
+   * Fetch real-world items
+   * --------------------- */
+  useEffect(() => {
+    if (!categoryId) return;
+    const loadItems = async () => {
+      try {
+        const response = await pb.collection("realworld_items").getFullList({
+          filter: `category = "${categoryId}"`,
+          expand: "unit",
+        });
+
+        const validItems = (response || []).filter((item) => {
+          const v = item.approx_value ?? item.scientific_value;
+          if (v == null) return false;
+          const cleaned = String(v).trim().replace(",", ".");
+          return cleaned !== "" && !isNaN(parseFloat(cleaned));
+        });
+
+        setRawItems(validItems);
+      } catch (err) {
+        console.error("loadRealWorldItems error", err);
+      }
+    };
+    loadItems();
+  }, [categoryId]);
+
+  /** ---------------------
+   * Localize units & items whenever language changes
+   * --------------------- */
+  useEffect(() => {
+    /** Localize units */
+    const localizedUnits = rawUnits.map((u) => {
+      const symbol = u.symbol?.toString() || "";
+
+      const displayName =
+        activeLang === "es"
+          ? u.name_es?.trim()
+            ? `${u.name_es} (${symbol})`
+            : symbol
+          : u.name_en?.trim()
+          ? `${u.name_en} (${symbol})`
+          : u.name_es?.trim()
+          ? `${u.name_es} (${symbol})`
+          : symbol;
+
+      return { ...u, name: displayName };
+    });
+    setUnits(localizedUnits);
+
+    /** Localize items */
+    const localizedItems = rawItems.map((it) => {
+      const name =
+        activeLang === "es"
+          ? it.name_es || it.name_en || it.name || ""
+          : it.name_en || it.name_es || it.name || "";
+      const notes =
+        activeLang === "es"
+          ? it.notes_es || it.notes_en || it.notes || ""
+          : it.notes_en || it.notes_es || it.notes || "";
+      const expression =
+        activeLang === "es"
+          ? it.expression_es || it.expression_en || it.expression || ""
+          : it.expression_en || it.expression_es || it.expression || "";
+
+      return { ...it, name, notes, expression };
+    });
+
+    setRealWorldItems(localizedItems);
+  }, [activeLang, rawUnits, rawItems]);
+
+  /** ---------------------
+   * Filter nearest lower / higher items based on input
+   * --------------------- */
+  useEffect(() => {
+    if (!inputValue || inputValue === "-") {
       setFilteredItems([realWorldItems, realWorldItems]);
       setSelectedItems([realWorldItems[0] || null, realWorldItems[0] || null]);
       return;
     }
 
-    const parsedInput = parseFloat(String(inputValue).trim().replace(",", "."));
-    if (isNaN(parsedInput) || parsedInput < -30 || parsedInput > 310) {
+    const parsedInput = parseFloat(inputValue.replace(",", "."));
+    if (isNaN(parsedInput)) {
       setFilteredItems([[], []]);
       setSelectedItems([null, null]);
       return;
     }
 
-    // stable numeric sort with id tie-breaker
-    const sorted = [...realWorldItems].slice().sort((a, b) => {
-      const va = numValue(a);
-      const vb = numValue(b);
-      if (va !== vb) return va - vb;
-      // tie-breaker
-      return String(a.id || "").localeCompare(String(b.id || ""));
-    });
+    const sorted = [...realWorldItems].sort((a, b) => numValue(a) - numValue(b));
+    const values = sorted.map(numValue);
 
-    // build arrays of numbers
-    const values = sorted.map((it) => numValue(it));
-
-    // find nearest lower value (<= input)
-    let nearestLowerValue = null;
+    let nearestLower = null;
     for (let i = values.length - 1; i >= 0; i--) {
       if (!isNaN(values[i]) && values[i] <= parsedInput) {
-        nearestLowerValue = values[i];
+        nearestLower = values[i];
         break;
       }
     }
 
-    // find nearest higher value (> input)
-    let nearestHigherValue = null;
+    let nearestHigher = null;
     for (let i = 0; i < values.length; i++) {
       if (!isNaN(values[i]) && values[i] > parsedInput) {
-        nearestHigherValue = values[i];
+        nearestHigher = values[i];
         break;
       }
     }
 
-    const lowerGroup = nearestLowerValue !== null
-      ? sorted.filter((it) => numValue(it) === nearestLowerValue)
-      : [];
-
-    const higherGroup = nearestHigherValue !== null
-      ? sorted.filter((it) => numValue(it) === nearestHigherValue)
-      : [];
+    const lowerGroup = nearestLower !== null ? sorted.filter(it => numValue(it) === nearestLower) : [];
+    const higherGroup = nearestHigher !== null ? sorted.filter(it => numValue(it) === nearestHigher) : [];
 
     setFilteredItems([lowerGroup, higherGroup]);
     setSelectedItems([lowerGroup[0] || null, higherGroup[0] || null]);
@@ -225,19 +171,16 @@ function SoundLevelConverter({ categoryId, lang = "en" }) {
             type="text"
             value={inputValue}
             onChange={(e) => {
-              // allow negative sign and up to 3 digits with optional decimal
               const raw = e.target.value.match(/^-?$|^-?\d{0,3}(\.\d*)?$/)?.[0] || "";
               if (
                 raw === "" ||
                 raw === "-" ||
-                (!isNaN(raw) &&
-                  parseFloat(raw) >= -30 &&
-                  parseFloat(raw) <= 310)
+                (!isNaN(raw) && parseFloat(raw) >= -30 && parseFloat(raw) <= 310)
               ) {
                 setInputValue(raw);
               }
             }}
-            placeholder={placeholderText}
+            placeholder={t("terms.enter_value_range_30_310")}
             className="border p-2 rounded w-full text-left font-mono"
           />
 
@@ -264,7 +207,6 @@ function SoundLevelConverter({ categoryId, lang = "en" }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Always render exactly two boxes (lower & higher) — each box receives all items that share that numeric value */}
               {selectedItems.map((selectedItem, index) =>
                 selectedItem ? (
                   <div
@@ -278,12 +220,8 @@ function SoundLevelConverter({ categoryId, lang = "en" }) {
 
                     <div className="overflow-x-auto max-w-full">
                       <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
-                        {selectedItem && (
-                          <>
-                            {numValue(selectedItem)}{" "}
-                            {selectedItem.expand?.unit?.symbol || ""}
-                          </>
-                        )}
+                        {numValue(selectedItem)}{" "}
+                        {selectedItem.expand?.unit?.symbol || ""}
                       </div>
                     </div>
 
@@ -299,8 +237,11 @@ function SoundLevelConverter({ categoryId, lang = "en" }) {
                     </div>
                   </div>
                 ) : (
-                  // render a blank placeholder if there is no item for this slot
-                  <div key={index} className="w-full p-4 rounded shadow" style={{ backgroundColor: theme?.box }} />
+                  <div
+                    key={index}
+                    className="w-full p-4 rounded shadow"
+                    style={{ backgroundColor: theme?.box }}
+                  />
                 )
               )}
             </div>

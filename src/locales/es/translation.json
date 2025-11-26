@@ -17,7 +17,8 @@
 	"arc_length": "Longitud del arco",
 	"distance": "Distancia",
 	"reference": "Referencia",
-	"enter_value_range_30_310": "Ingrese un valor(-30 a 310)"
+	"enter_value_range_30_310": "Ingrese un valor(-30 a 310)",
+	"volume_comparison": "Comparación de volumen"
   },
   "error": {
   "please_enter_a_number_between_1_and_6": "Por favor, introduce un número entre 1 y 6."

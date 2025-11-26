@@ -1,46 +1,62 @@
 import React, { createContext, useEffect, useState, useContext } from "react";
 import pb from "../utils/pocketbaseClient";
+import { useTranslation } from "react-i18next";
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(null);
+  const { i18n } = useTranslation();
+  const lang = i18n.language || "en";
 
   useEffect(() => {
     const fetchTheme = async () => {
       try {
         const record = await pb.collection("site_settings").getFirstListItem("");
 
+        // ---------- LANGUAGE-BASED LOGO ----------
+        const logo =
+          lang === "es"
+            ? record.logo_es
+              ? pb.files.getURL(record, record.logo_es)
+              : null
+            : record.logo_en
+            ? pb.files.getURL(record, record.logo_en)
+            : null;
+
+        // ---------- SINGLE FAVICON ----------
+        const favicon = record.favicon
+          ? pb.files.getURL(record, record.favicon)
+          : null;
+
         setTheme({
-          primary: record.primary_color,        // e.g. #feb73f
-          surface: record.surface_color,        // e.g. #f3f4f6
-          base: record.base_color,              // e.g. #ffffff
-          box: record.box_color,                // box bg
+          primary: record.primary_color,
+          surface: record.surface_color,
+          base: record.base_color,
+          box: record.box_color,
           font: record.font_family_main || "'Poppins', sans-serif",
-          logo: record.logo_url ? pb.files.getURL(record, record.logo_url) : null,
-          favicon: record.favicon_url ? pb.files.getURL(record, record.favicon_url) : null,
-          headerBg: record.header_bg_color,     // ✅ New field added
+          logo,
+          favicon,
+          headerBg: record.header_bg_color,
         });
 
-        // Favicon setup
-        if (record.favicon_url) {
-          const link = document.querySelector("link[rel~='icon']");
-          if (link) {
-            link.href = pb.files.getURL(record, record.favicon_url);
-          } else {
-            const newLink = document.createElement("link");
-            newLink.rel = "icon";
-            newLink.href = pb.files.getURL(record, record.favicon_url);
-            document.head.appendChild(newLink);
+        // ---------- UPDATE FAVICON ----------
+        if (favicon) {
+          let link = document.querySelector("link[rel~='icon']");
+          if (!link) {
+            link = document.createElement("link");
+            link.rel = "icon";
+            document.head.appendChild(link);
           }
+          link.href = favicon;
         }
 
-        // Font setup
+        // ---------- FONT ----------
         if (record.font_family_main) {
           document.body.style.fontFamily = record.font_family_main;
         }
 
-        // Background color
+        // ---------- BASE BACKGROUND ----------
         if (record.base_color) {
           document.body.style.backgroundColor = record.base_color;
         }
@@ -51,7 +67,7 @@ export const ThemeProvider = ({ children }) => {
     };
 
     fetchTheme();
-  }, []);
+  }, [lang]); // re-run only when language changes (affects logo only)
 
   return (
     <ThemeContext.Provider value={theme}>

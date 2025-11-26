@@ -172,7 +172,12 @@ function CategoryPage({ lang, categorySlug }) {
                   <tbody className="divide-y divide-gray-100">
                     {prefixes.map((prefix) => (
                       <tr key={prefix.id} className="odd:bg-gray-50">
-                        <td className="px-4 py-2 break-words">{prefix.name || prefix.prefix}</td>
+                        <td className="px-4 py-2 break-words">
+                            {lang === "es"
+                            ? prefix.name_es || prefix.name_en   
+                            : prefix.name_en                     
+                            }
+                        </td>
                         <td className="px-4 py-2 break-words">{prefix.symbol}</td>
                         <td className="px-4 py-2 break-words">{prefix.multiplier}</td>
                         <td className="px-4 py-2">

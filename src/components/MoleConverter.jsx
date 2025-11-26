@@ -3,9 +3,13 @@ import pb from "../utils/pocketbaseClient";
 import { formatNumber } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import FooterNote from "./FooterNote";
+import { useTranslation } from "react-i18next";
 
-function MoleConverter({ categoryId }) {
+
+function MoleConverter({ categoryId, lang }) {
   const theme = useTheme();
+  const { t, i18n } = useTranslation();
+  const activeLang = lang || i18n.language || "en";
   const primaryColor = theme?.primary || "#feb73f";
 
   const [units, setUnits] = useState([]);
@@ -18,40 +22,86 @@ function MoleConverter({ categoryId }) {
     false,
     false,
   ]);
-
+/** -------------------------------------------------
+   *  FETCH UNITS
+   * ------------------------------------------------- */
   useEffect(() => {
-    const fetchUnits = async () => {
-      const records = await pb.collection("units").getFullList({
-        filter: `category = "${categoryId}"`,
-      });
-      setUnits(records);
-      setSelectedUnits([records[0]?.id, records[1]?.id, records[2]?.id]);
-    };
-    fetchUnits();
-  }, [categoryId]);
+  const fetchUnits = async () => {
+    const records = await pb.collection("units").getFullList({
+      filter: `category = "${categoryId}"`,
+    });
 
-  useEffect(() => {
-    const fetchRealWorldItems = async () => {
-      try {
-        const results = await Promise.all(
-          selectedUnits.map((unitId) =>
-            pb.collection("realworld_items").getFullList({
-              filter: `unit = "${unitId}"`,
-              sort: "approx_value",
-            }),
-          ),
-        );
-        setRealWorldItems(results);
-        setSelectedItems(results.map((group) => group?.[0] || null));
-      } catch (err) {
-        console.error("Failed to fetch real world items:", err);
-      }
-    };
+    // LOCALIZE UNITS
+    const localizedUnits = records.map((u) => ({
+      ...u,
+      name:
+        activeLang === "es"
+          ? u.name_es || u.name_en
+          : u.name_en || u.name_es,
+      notes:
+        activeLang === "es"
+          ? u.notes_es || u.notes_en
+          : u.notes_en || u.notes_es,
+      symbol:
+        activeLang === "es"
+          ? u.symbol_es || u.symbol_en
+          : u.symbol_en || u.symbol_es,
+    }));
 
-    if (selectedUnits.every(Boolean)) {
-      fetchRealWorldItems();
+    setUnits(localizedUnits);
+    setSelectedUnits([
+      localizedUnits[0]?.id,
+      localizedUnits[1]?.id,
+      localizedUnits[2]?.id,
+    ]);
+  };
+
+  fetchUnits();
+}, [categoryId, activeLang]);
+
+/** -------------------------------------------------
+   *  FETCH REALWORLD ITEMS
+   * ------------------------------------------------- */
+
+ useEffect(() => {
+  const fetchRealWorldItems = async () => {
+    try {
+      const results = await Promise.all(
+        selectedUnits.map((unitId) =>
+          pb.collection("realworld_items").getFullList({
+            filter: `unit = "${unitId}"`,
+            sort: "approx_value",
+          })
+        )
+      );
+
+      // LOCALIZE ITEMS
+      const localizedResults = results.map((group) =>
+        group.map((item) => ({
+          ...item,
+          name:
+            activeLang === "es"
+              ? item.name_es || item.name_en
+              : item.name_en || item.name_es,
+          notes:
+            activeLang === "es"
+              ? item.notes_es || item.notes_en
+              : item.notes_en || item.notes_es,
+        }))
+      );
+
+      setRealWorldItems(localizedResults);
+      setSelectedItems(localizedResults.map((group) => group?.[0] || null));
+    } catch (err) {
+      console.error("Failed to fetch real world items:", err);
     }
-  }, [selectedUnits]);
+  };
+
+  if (selectedUnits.every(Boolean)) {
+    fetchRealWorldItems();
+  }
+}, [selectedUnits, activeLang]);
+
 
   const handleInputChange = (index, val) => {
     const updated = [...inputValues];
@@ -62,7 +112,7 @@ function MoleConverter({ categoryId }) {
   return (
     <div className="w-full grid gap-4">
       <h2 className="text-center text-xl font-bold text-gray-700 mb-2">
-        Volume Comparison
+        {t("terms.volume_comparison")}
       </h2>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -91,7 +141,7 @@ function MoleConverter({ categoryId }) {
                     const raw = e.target.value.match(/^\d*\.?\d*/)?.[0] || "";
                     handleInputChange(boxIndex, raw);
                   }}
-                  placeholder="Enter value"
+                  placeholder={t("terms.enter_value")}
                   className="border p-2 rounded w-full text-left font-mono"
                 />
               </div>
@@ -121,7 +171,7 @@ function MoleConverter({ categoryId }) {
                     )
                   }
                 >
-                  General
+                  {t("terms.general")}
                 </button>
                 <button
                   className={`px-3 py-1 rounded-r ${
@@ -141,7 +191,7 @@ function MoleConverter({ categoryId }) {
                     )
                   }
                 >
-                  Scientific
+                  {t("terms.scientific")}
                 </button>
               </div>
 

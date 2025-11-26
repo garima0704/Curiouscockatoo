@@ -17,7 +17,9 @@
 	"arc_length": "Arc Length",
 	"distance": "Distance",
 	"reference": "Reference",
-	"enter_value_range_30_310": "Enter value (-30 to 310)"
+	"enter_value_range_30_310": "Enter value (-30 to 310)",
+	"volume_comparison": "Volume Comparison"
+	
   },
   "error": {
 	  "please_enter_a_number_between_1_and_6": "Please enter a number between 1 and 6."

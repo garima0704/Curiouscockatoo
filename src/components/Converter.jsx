@@ -26,12 +26,12 @@ function Converter({ categoryId, lang }) {
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
-  const [comparisonToggles, setComparisonToggles] = useState([false, false, false]);
-  const [conversionToggles, setConversionToggles] = useState([false, false, false]);
+  const [comparisonToggles, setComparisonToggles] = useState([false,false,false,]);
+  const [conversionToggles, setConversionToggles] = useState([false,false,false,]);
   const [categoryInfo, setCategoryInfo] = useState(null);
 
   /** -------------------------------------------------
-   *  FETCH UNITS + CATEGORY  (Re-fetch on lang change)
+   *  FETCH UNITS + CATEGORY  
    * ------------------------------------------------- */
   useEffect(() => {
     if (!categoryId) return;
@@ -39,7 +39,9 @@ function Converter({ categoryId, lang }) {
     const load = async () => {
       try {
         const [unitList, category] = await Promise.all([
-          pb.collection("units").getFullList({ filter: `category = "${categoryId}"` }),
+          pb
+            .collection("units")
+            .getFullList({ filter: `category = "${categoryId}"` }),
           pb.collection("categories").getOne(categoryId),
         ]);
 
@@ -65,7 +67,7 @@ function Converter({ categoryId, lang }) {
         };
         setCategoryInfo(mappedCategory);
 
-        /** UNIT LOCALIZATION + REMOVE PB DEFAULT name */
+        /** UNIT LOCALIZATION */
         const mappedUnits = unitList
           .map((u) => {
             const localizedName =
@@ -73,7 +75,7 @@ function Converter({ categoryId, lang }) {
                 ? u.name_es || u.name_en || ""
                 : u.name_en || u.name_es || "";
 
-            const { name, ...rest } = u; // REMOVE PB's auto `name`
+            const { name, ...rest } = u; 
 
             return {
               ...rest,
@@ -88,11 +90,10 @@ function Converter({ categoryId, lang }) {
 
         setUnits(mappedUnits);
 
-        /** DEFAULT FROM UNIT (prefer category.base_unit) */
+        /** DEFAULT FROM UNIT */
         const baseUnitId = mappedCategory.base_unit;
         const baseExists = mappedUnits.find((u) => u.id === baseUnitId);
-        const defaultFrom = baseExists ? baseUnitId : mappedUnits[0]?.id;
-
+        const defaultFrom = mappedUnits[0]?.id || "";
         setFromUnit(defaultFrom);
 
         /** RESET 3 TARGET UNITS */
@@ -111,7 +112,7 @@ function Converter({ categoryId, lang }) {
   }, [categoryId, activeLang]);
 
   /** -------------------------------------------------
-   *  FETCH REAL WORLD ITEMS (Re-fetch on lang change)
+   *  FETCH REAL WORLD ITEMS
    * ------------------------------------------------- */
   useEffect(() => {
     if (!categoryId) return;
@@ -145,22 +146,30 @@ function Converter({ categoryId, lang }) {
           let num = NaN;
 
           if (item.scientific_value) num = parseFloat(item.scientific_value);
-          if ((!num || isNaN(num)) && item.approx_value) num = parseFloat(item.approx_value);
+          if ((!num || isNaN(num)) && item.approx_value)
+            num = parseFloat(item.approx_value);
           if ((!num || isNaN(num)) && item.expression) {
             const parsed = parseScientific(item.expression);
             if (!isNaN(parsed)) num = parsed;
           }
 
           const exponent =
-            num && !isNaN(num) && num !== 0 ? Math.floor(Math.log10(Math.abs(num))) : null;
+            num && !isNaN(num) && num !== 0
+              ? Math.floor(Math.log10(Math.abs(num)))
+              : null;
 
           return { ...item, _num: num, exponent };
         });
 
-        const valid = (item) => item._num && !isNaN(item._num) && item._num !== 0;
+        const valid = (item) =>
+          item._num && !isNaN(item._num) && item._num !== 0;
 
-        const forceZero = withExp.filter((x) => x.force_last_position && !valid(x));
-        const normal = withExp.filter((x) => !(x.force_last_position && !valid(x)));
+        const forceZero = withExp.filter(
+          (x) => x.force_last_position && !valid(x),
+        );
+        const normal = withExp.filter(
+          (x) => !(x.force_last_position && !valid(x)),
+        );
         const safe = normal.filter((x) => x.exponent !== null);
 
         /** INSERT blank cards between exponent jumps */
@@ -175,13 +184,19 @@ function Converter({ categoryId, lang }) {
         });
 
         const finalItems = [...enriched, ...forceZero].sort(
-          (a, b) => (a.exponent ?? 0) - (b.exponent ?? 0)
+          (a, b) => (a.exponent ?? 0) - (b.exponent ?? 0),
         );
 
         setRealWorldItems(finalItems);
 
-        const firstThree = finalItems.filter((x) => x.type !== "blank").slice(0, 3);
-        setSelectedItems([firstThree[0] || null, firstThree[1] || null, firstThree[2] || null]);
+        const firstThree = finalItems
+          .filter((x) => x.type !== "blank")
+          .slice(0, 3);
+        setSelectedItems([
+          firstThree[0] || null,
+          firstThree[1] || null,
+          firstThree[2] || null,
+        ]);
       } catch (e) {
         console.error("Real world fetch error:", e);
       }
@@ -204,11 +219,11 @@ function Converter({ categoryId, lang }) {
 
   /** Specialized converter routing */
   const catSlug = categoryInfo?.slug_en?.toLowerCase() || "";
-	if (catSlug === "mole") return <MoleConverter categoryId={categoryId} />;
-	if (catSlug === "temperature") return <TemperatureConverter categoryId={categoryId} />;
-	if (catSlug === "refractive-index") return <RefractiveIndexConverter categoryId={categoryId} />;
-	if (catSlug === "angle") return <AngleConverter categoryId={categoryId} />;
-	if (catSlug === "sound-level") return <SoundLevelConverter categoryId={categoryId} />;
+  if (catSlug === "mol") return <MoleConverter categoryId={categoryId} />;
+  if (catSlug === "temperature") return <TemperatureConverter categoryId={categoryId} />;
+  if (catSlug === "refractive-index") return <RefractiveIndexConverter categoryId={categoryId} />;
+  if (catSlug === "angle") return <AngleConverter categoryId={categoryId} />;
+  if (catSlug === "sound-level") return <SoundLevelConverter categoryId={categoryId} />;
 
   /** -----------------------
    *   MAIN CONVERSION
@@ -249,8 +264,10 @@ function Converter({ categoryId, lang }) {
 
     let raw = NaN;
     if (item.expression) raw = parseScientific(item.expression);
-    if ((!raw || isNaN(raw)) && item.approx_value) raw = parseFloat(item.approx_value);
-    if ((!raw || isNaN(raw)) && item.scientific_value) raw = parseFloat(item.scientific_value);
+    if ((!raw || isNaN(raw)) && item.approx_value)
+      raw = parseFloat(item.approx_value);
+    if ((!raw || isNaN(raw)) && item.scientific_value)
+      raw = parseFloat(item.scientific_value);
 
     if (!raw || isNaN(raw)) return null;
     return base / raw;
@@ -278,8 +295,8 @@ function Converter({ categoryId, lang }) {
                 isFocused || !fromUnit
                   ? inputValue
                   : inputValue
-                  ? `${inputValue} ${units.find((u) => u.id === fromUnit)?.symbol || ""}`
-                  : ""
+                    ? `${inputValue} ${units.find((u) => u.id === fromUnit)?.symbol || ""}`
+                    : ""
               }
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
@@ -295,17 +312,26 @@ function Converter({ categoryId, lang }) {
           </div>
 
           <div className="border rounded max-h-40 overflow-y-auto w-full text-sm space-y-1 bg-white">
-            {units.map((u) => (
-              <div
-                key={u.id}
-                onClick={() => setFromUnit(u.id)}
-                className={`cursor-pointer p-1 rounded hover:bg-blue-100 ${
-                  fromUnit === u.id ? "bg-blue-200 font-medium" : ""
-                }`}
-              >
-                {u.name} ({u.symbol})
-              </div>
-            ))}
+            {units.map((u) => {
+              const displayName =
+                activeLang === "es"
+                  ? u.name_es?.trim()
+                    ? `${u.name_es} (${u.symbol})`
+                    : u.symbol
+                  : `${u.name_en || u.name_es} (${u.symbol})`;
+
+              return (
+                <div
+                  key={u.id}
+                  onClick={() => setFromUnit(u.id)}
+                  className={`cursor-pointer p-1 rounded hover:bg-blue-100 ${
+                    fromUnit === u.id ? "bg-blue-200 font-medium" : ""
+                  }`}
+                >
+                  {displayName}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -338,15 +364,19 @@ function Converter({ categoryId, lang }) {
                       <div className="flex justify-center gap-2">
                         <button
                           className={`px-3 py-1 rounded-l ${
-                            !conversionToggles[index] ? "text-white" : "bg-white border text-black"
+                            !conversionToggles[index]
+                              ? "text-white"
+                              : "bg-white border text-black"
                           }`}
                           style={{
                             borderColor: "#ccc",
-                            backgroundColor: !conversionToggles[index] ? primaryColor : "white",
+                            backgroundColor: !conversionToggles[index]
+                              ? primaryColor
+                              : "white",
                           }}
                           onClick={() =>
                             setConversionToggles((prev) =>
-                              prev.map((t, i) => (i === index ? false : t))
+                              prev.map((t, i) => (i === index ? false : t)),
                             )
                           }
                         >
@@ -355,15 +385,19 @@ function Converter({ categoryId, lang }) {
 
                         <button
                           className={`px-3 py-1 rounded-r ${
-                            conversionToggles[index] ? "text-white" : "bg-white border text-black"
+                            conversionToggles[index]
+                              ? "text-white"
+                              : "bg-white border text-black"
                           }`}
                           style={{
                             borderColor: "#ccc",
-                            backgroundColor: conversionToggles[index] ? primaryColor : "white",
+                            backgroundColor: conversionToggles[index]
+                              ? primaryColor
+                              : "white",
                           }}
                           onClick={() =>
                             setConversionToggles((prev) =>
-                              prev.map((t, i) => (i === index ? true : t))
+                              prev.map((t, i) => (i === index ? true : t)),
                             )
                           }
                         >
@@ -377,7 +411,10 @@ function Converter({ categoryId, lang }) {
                           <div className="break-super break-words whitespace-normal">
                             {inputValue && convert(toUnitId) !== null ? (
                               <>
-                                {formatNumber(convert(toUnitId), conversionToggles[index])}{" "}
+                                {formatNumber(
+                                  convert(toUnitId),
+                                  conversionToggles[index],
+                                )}{" "}
                               </>
                             ) : null}
                             {currentUnit?.symbol}
@@ -394,11 +431,15 @@ function Converter({ categoryId, lang }) {
                               key={u.id}
                               onClick={() =>
                                 setSelectedUnits((prev) =>
-                                  prev.map((id, i) => (i === index ? u.id : id))
+                                  prev.map((id, i) =>
+                                    i === index ? u.id : id,
+                                  ),
                                 )
                               }
                               className={`cursor-pointer p-1 hover:bg-blue-100 ${
-                                toUnitId === u.id ? "bg-blue-200 font-medium" : ""
+                                toUnitId === u.id
+                                  ? "bg-blue-200 font-medium"
+                                  : ""
                               }`}
                             >
                               {u.name} ({u.symbol})
@@ -429,15 +470,19 @@ function Converter({ categoryId, lang }) {
                     <div className="flex justify-center gap-2">
                       <button
                         className={`px-3 py-1 rounded-l ${
-                          !comparisonToggles[index] ? "text-white" : "bg-white border text-black"
+                          !comparisonToggles[index]
+                            ? "text-white"
+                            : "bg-white border text-black"
                         }`}
                         style={{
                           borderColor: "#ccc",
-                          backgroundColor: !comparisonToggles[index] ? primaryColor : "white",
+                          backgroundColor: !comparisonToggles[index]
+                            ? primaryColor
+                            : "white",
                         }}
                         onClick={() =>
                           setComparisonToggles((prev) =>
-                            prev.map((t, i) => (i === index ? false : t))
+                            prev.map((t, i) => (i === index ? false : t)),
                           )
                         }
                       >
@@ -445,15 +490,19 @@ function Converter({ categoryId, lang }) {
                       </button>
                       <button
                         className={`px-3 py-1 rounded-r ${
-                          comparisonToggles[index] ? "text-white" : "bg-white border text-black"
+                          comparisonToggles[index]
+                            ? "text-white"
+                            : "bg-white border text-black"
                         }`}
                         style={{
                           borderColor: "#ccc",
-                          backgroundColor: comparisonToggles[index] ? primaryColor : "white",
+                          backgroundColor: comparisonToggles[index]
+                            ? primaryColor
+                            : "white",
                         }}
                         onClick={() =>
                           setComparisonToggles((prev) =>
-                            prev.map((t, i) => (i === index ? true : t))
+                            prev.map((t, i) => (i === index ? true : t)),
                           )
                         }
                       >
@@ -466,7 +515,10 @@ function Converter({ categoryId, lang }) {
                       <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
                         <div className="break-super break-words whitespace-normal">
                           {item && inputValue
-                            ? formatNumber(compare(item), comparisonToggles[index])
+                            ? formatNumber(
+                                compare(item),
+                                comparisonToggles[index],
+                              )
                             : ""}
                         </div>
                       </div>
@@ -477,7 +529,9 @@ function Converter({ categoryId, lang }) {
                       <RealWorldBox
                         selected={item}
                         setSelected={(v) =>
-                          setSelectedItems((prev) => prev.map((x, i) => (i === index ? v : x)))
+                          setSelectedItems((prev) =>
+                            prev.map((x, i) => (i === index ? v : x)),
+                          )
                         }
                         items={realWorldItems}
                         scientificToggle={true}

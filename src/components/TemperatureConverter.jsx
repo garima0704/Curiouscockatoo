@@ -211,7 +211,7 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                   setInputValue(raw);
                 }
               }}
-              placeholder="Enter value"
+              placeholder={t("terms.enter_value")}
               className="border p-2 rounded w-full text-left font-mono"
             />
           </div>
@@ -289,7 +289,7 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                         <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
                           {inputValue && getConvertedValue(toUnitId) !== null
                             ? `${formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} ${currentUnit?.symbol || ""}`
-                            : ""}
+                            : currentUnit?.symbol || ""}
                         </div>
                       </div>
 

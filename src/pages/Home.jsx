@@ -92,7 +92,7 @@ export default function Home() {
     >
       <Header />
 
-      <main className="flex-grow pt-24 sm:pt-28">
+      <main className="flex-grow pt-32 sm:pt-36">
         <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
 
           {/* Main Tabs Section */}
