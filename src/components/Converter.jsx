@@ -4,7 +4,7 @@ import RealWorldBox from "./RealWorldBox";
 import { formatNumber } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
-import MoleConverter from "./MoleConverter";
+import MolConverter from "./MolConverter";
 import TemperatureConverter from "./TemperatureConverter";
 import RefractiveIndexConverter from "./RefractiveIndexConverter";
 import AngleConverter from "./AngleConverter";
@@ -219,7 +219,7 @@ function Converter({ categoryId, lang }) {
 
   /** Specialized converter routing */
   const catSlug = categoryInfo?.slug_en?.toLowerCase() || "";
-  if (catSlug === "mol") return <MoleConverter categoryId={categoryId} />;
+  if (catSlug === "mol") return <MolConverter categoryId={categoryId} />;
   if (catSlug === "temperature") return <TemperatureConverter categoryId={categoryId} />;
   if (catSlug === "refractive-index") return <RefractiveIndexConverter categoryId={categoryId} />;
   if (catSlug === "angle") return <AngleConverter categoryId={categoryId} />;

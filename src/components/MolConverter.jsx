@@ -6,7 +6,7 @@ import FooterNote from "./FooterNote";
 import { useTranslation } from "react-i18next";
 
 
-function MoleConverter({ categoryId, lang }) {
+function MolConverter({ categoryId, lang }) {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const activeLang = lang || i18n.language || "en";
@@ -14,6 +14,7 @@ function MoleConverter({ categoryId, lang }) {
 
   const [units, setUnits] = useState([]);
   const [inputValues, setInputValues] = useState(["", "", ""]);
+  const [baseUnit, setBaseUnit] = useState(null);
   const [selectedUnits, setSelectedUnits] = useState([null, null, null]);
   const [realWorldItems, setRealWorldItems] = useState([[], [], []]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
@@ -42,10 +43,7 @@ function MoleConverter({ categoryId, lang }) {
         activeLang === "es"
           ? u.notes_es || u.notes_en
           : u.notes_en || u.notes_es,
-      symbol:
-        activeLang === "es"
-          ? u.symbol_es || u.symbol_en
-          : u.symbol_en || u.symbol_es,
+      symbol: u.symbol,
     }));
 
     setUnits(localizedUnits);
@@ -261,4 +259,4 @@ function MoleConverter({ categoryId, lang }) {
   );
 }
 
-export default MoleConverter;
+export default MolConverter;
