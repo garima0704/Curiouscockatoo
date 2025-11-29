@@ -18,21 +18,23 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
-  const [comparisonToggles, setComparisonToggles] = useState([false, false, false]);
-  const [conversionToggles, setConversionToggles] = useState([false, false, false]);
+  const [comparisonToggles, setComparisonToggles] = useState([false,false,false,]);
+  const [conversionToggles, setConversionToggles] = useState([false,false,false,]);
   const [categoryInfo, setCategoryInfo] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [unitList, category] = await Promise.all([
-          pb.collection("units").getFullList({ filter: `category = "${categoryId}"` }),
+          pb
+            .collection("units")
+            .getFullList({ filter: `category = "${categoryId}"` }),
           pb.collection("categories").getOne(categoryId),
         ]);
         setCategoryInfo(category);
 
         const sortedUnits = unitList.sort(
-          (a, b) => a.to_base_factor - b.to_base_factor
+          (a, b) => a.to_base_factor - b.to_base_factor,
         );
         setUnits(sortedUnits);
 
@@ -52,92 +54,111 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
   }, [categoryId]);
 
   useEffect(() => {
-  const fetchRealWorldItems = async () => {
-    const response = await pb.collection("realworld_items").getFullList({
-      filter: `category = "${categoryId}"`,
-      expand: "unit",
-    });
+    const fetchRealWorldItems = async () => {
+      const response = await pb.collection("realworld_items").getFullList({
+        filter: `category = "${categoryId}"`,
+        expand: "unit",
+      });
 
-    const withExponents = response.map((item) => {
-      const value = parseFloat(item.scientific_value);
-      const exponent = isNaN(value)
-        ? null
-        : Math.floor(Math.log10(Math.abs(value)));
-      return { ...item, exponent };
-    });
+      const withExponents = response.map((item) => {
+        const value = parseFloat(item.scientific_value);
+        const exponent = isNaN(value)
+          ? null
+          : Math.floor(Math.log10(Math.abs(value)));
+        return { ...item, exponent };
+      });
 
-    // Helper to check if approx_value or scientific_value is valid non-zero
-    const isValidValue = (item) => {
-      const approx = parseFloat(item.approx_value);
-      const sci = parseFloat(item.scientific_value);
-      return (approx && approx !== 0) || (sci && sci !== 0);
+      // Helper to check if approx_value or scientific_value is valid non-zero
+      const isValidValue = (item) => {
+        const approx = parseFloat(item.approx_value);
+        const sci = parseFloat(item.scientific_value);
+        return (approx && approx !== 0) || (sci && sci !== 0);
+      };
+
+      // Separate forced-last-position items with invalid zero values
+      const zeroForceLastItems = withExponents.filter(
+        (item) => item.force_last_position && !isValidValue(item),
+      );
+
+      // Filter real items to exclude zero-value forced last items
+      const filteredRealItems = withExponents.filter(
+        (item) => !(item.force_last_position && !isValidValue(item)),
+      );
+
+      const safeItems = filteredRealItems.filter(
+        (item) => item.exponent !== null && !isNaN(item.exponent),
+      );
+
+      const enrichedItems = distributeBlankCards(safeItems, 9);
+
+      // Sort items with updated logic, only consider valid forced last items
+      enrichedItems.sort((a, b) => {
+        const aForce = a.force_last_position && isValidValue(a);
+        const bForce = b.force_last_position && isValidValue(b);
+
+        if (aForce && !bForce) return 1;
+        if (!aForce && bForce) return -1;
+
+        if (a.power !== b.power) return a.power - b.power;
+
+        const aApprox = a.approx_value ?? Infinity;
+        const bApprox = b.approx_value ?? Infinity;
+
+        return aApprox - bApprox;
+      });
+
+      // Append the zero-value forced last items at the very end
+      const finalItems = [...enrichedItems, ...zeroForceLastItems].sort(
+        (a, b) => a.power - b.power,
+      );
+
+      setRealWorldItems(finalItems);
+
+      // Set default selectedItems (first 3 real items ignoring blanks)
+      const realItems = finalItems.filter((item) => item.type !== "blank");
+
+      const defaultSelected = [
+        realItems[0] || null,
+        realItems[1] || null,
+        realItems[2] || null,
+      ];
+
+      setSelectedItems(defaultSelected);
+    };
+    if (categoryId) fetchRealWorldItems();
+  }, [categoryId]);
+
+  useEffect(() => {
+    if (units.length > 1 && fromUnit) {
+      const defaultConversions = units
+        .filter((u) => u.id !== fromUnit)
+        .slice(0, 3)
+        .map((u) => u.id);
+      setSelectedUnits(defaultConversions);
+    }
+  }, [fromUnit, units]);
+
+  useEffect(() => {
+    if (!fromUnit) return;
+
+    const minLimits = {
+      "°C": -273.15,
+      "°F": -459.67,
+      K: 0,
     };
 
-    // Separate forced-last-position items with invalid zero values
-    const zeroForceLastItems = withExponents.filter(
-      (item) => item.force_last_position && !isValidValue(item)
-    );
+    const currentUnit = units.find((u) => u.id === fromUnit);
+    const symbol = currentUnit?.symbol;
+    const minAllowed = symbol ? minLimits[symbol] : null;
 
-    // Filter real items to exclude zero-value forced last items
-    const filteredRealItems = withExponents.filter(
-      (item) => !(item.force_last_position && !isValidValue(item))
-    );
-
-    const safeItems = filteredRealItems.filter(
-      (item) => item.exponent !== null && !isNaN(item.exponent)
-    );
-
-    const enrichedItems = distributeBlankCards(safeItems, 9);
-
-    // Sort items with updated logic, only consider valid forced last items
-    enrichedItems.sort((a, b) => {
-      const aForce = a.force_last_position && isValidValue(a);
-      const bForce = b.force_last_position && isValidValue(b);
-
-      if (aForce && !bForce) return 1;
-      if (!aForce && bForce) return -1;
-
-      if (a.power !== b.power) return a.power - b.power;
-
-      const aApprox = a.approx_value ?? Infinity;
-      const bApprox = b.approx_value ?? Infinity;
-
-      return aApprox - bApprox;
-    });
-
-    // Append the zero-value forced last items at the very end
-    const finalItems = [...enrichedItems, ...zeroForceLastItems].sort(
-      (a, b) => a.power - b.power
-    );
-
-    setRealWorldItems(finalItems);
-
-    // Set default selectedItems (first 3 real items ignoring blanks)
-    const realItems = finalItems.filter((item) => item.type !== "blank");
-
-    const defaultSelected = [
-      realItems[0] || null,
-      realItems[1] || null,
-      realItems[2] || null,
-    ];
-
-    setSelectedItems(defaultSelected);
-  };
-  if (categoryId) fetchRealWorldItems();
-}, [categoryId]);
-
-
-  
-  useEffect(() => {
-  if (units.length > 1 && fromUnit) {
-    const defaultConversions = units
-      .filter((u) => u.id !== fromUnit)
-      .slice(0, 3)
-      .map((u) => u.id);
-    setSelectedUnits(defaultConversions);
-  }
-}, [fromUnit, units]);
-
+    if (minAllowed !== null && inputValue !== "") {
+      const num = parseFloat(inputValue);
+      if (!isNaN(num) && num < minAllowed) {
+        // Reset input to minAllowed or empty
+        setInputValue(minAllowed.toString());
+      }
+    }
+  }, [fromUnit, units]);
 
   const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
@@ -156,7 +177,7 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
     const kelvin = (input + fromOffset) * fromFactor;
 
     // Convert Kelvin to target unit
-    return (kelvin / toFactor) - toOffset;
+    return kelvin / toFactor - toOffset;
   };
 
   const getComparisonValue = (item) => {
@@ -206,10 +227,49 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               onChange={(e) => {
-                const raw = e.target.value.match(/^\d*\.?\d*/)?.[0] || "";
-                if (raw === "" || (!isNaN(raw) && parseFloat(raw) >= 0)) {
+                const raw = e.target.value;
+
+                // Allow partial typing: "-", ".", "-."
+                if (raw === "-" || raw === "." || raw === "-.") {
                   setInputValue(raw);
+                  return;
                 }
+
+                // Allow only valid patterns
+                if (!/^[-]?\d*\.?\d*$/.test(raw)) {
+                  return;
+                }
+
+                // If empty, just update
+                if (raw === "") {
+                  setInputValue("");
+                  return;
+                }
+
+                const num = parseFloat(raw);
+                if (isNaN(num)) {
+                  setInputValue(raw);
+                  return;
+                }
+
+                // Temperature minimum limits
+                const minLimits = {
+                  "°C": -273.15,
+                  "°F": -459.67,
+                  K: 0,
+                };
+
+                const currentUnit = units.find((u) => u.id === fromUnit);
+                const symbol = currentUnit?.symbol;
+                const minAllowed = symbol ? minLimits[symbol] : null;
+
+                // BLOCK invalid values BEFORE updating state
+                if (minAllowed !== null && num < minAllowed) {
+                  return;
+                }
+
+                // Only update state when value is valid
+                setInputValue(raw);
               }}
               placeholder={t("terms.enter_value")}
               className="border p-2 rounded w-full text-left font-mono"
@@ -252,15 +312,19 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                       <div className="flex justify-center gap-2">
                         <button
                           className={`px-3 py-1 rounded-l ${
-                            !conversionToggles[index] ? "text-white" : "bg-white border text-black"
+                            !conversionToggles[index]
+                              ? "text-white"
+                              : "bg-white border text-black"
                           }`}
                           style={{
-                            backgroundColor: !conversionToggles[index] ? primaryColor : "white",
+                            backgroundColor: !conversionToggles[index]
+                              ? primaryColor
+                              : "white",
                             borderColor: "#ccc",
                           }}
                           onClick={() =>
                             setConversionToggles((prev) =>
-                              prev.map((t, i) => (i === index ? false : t))
+                              prev.map((t, i) => (i === index ? false : t)),
                             )
                           }
                         >
@@ -268,15 +332,19 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                         </button>
                         <button
                           className={`px-3 py-1 rounded-r ${
-                            conversionToggles[index] ? "text-white" : "bg-white border text-black"
+                            conversionToggles[index]
+                              ? "text-white"
+                              : "bg-white border text-black"
                           }`}
                           style={{
-                            backgroundColor: conversionToggles[index] ? primaryColor : "white",
+                            backgroundColor: conversionToggles[index]
+                              ? primaryColor
+                              : "white",
                             borderColor: "#ccc",
                           }}
                           onClick={() =>
                             setConversionToggles((prev) =>
-                              prev.map((t, i) => (i === index ? true : t))
+                              prev.map((t, i) => (i === index ? true : t)),
                             )
                           }
                         >
@@ -301,11 +369,15 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                             <div
                               key={u.id}
                               className={`cursor-pointer p-1 hover:bg-blue-100 ${
-                                toUnitId === u.id ? "bg-blue-200 font-medium" : ""
+                                toUnitId === u.id
+                                  ? "bg-blue-200 font-medium"
+                                  : ""
                               }`}
                               onClick={() =>
                                 setSelectedUnits((prev) =>
-                                  prev.map((id, i) => (i === index ? u.id : id))
+                                  prev.map((id, i) =>
+                                    i === index ? u.id : id,
+                                  ),
                                 )
                               }
                             >
@@ -336,15 +408,19 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                     <div className="flex justify-center gap-2">
                       <button
                         className={`px-3 py-1 rounded-l ${
-                          !comparisonToggles[index] ? "text-white" : "bg-white border text-black"
+                          !comparisonToggles[index]
+                            ? "text-white"
+                            : "bg-white border text-black"
                         }`}
                         style={{
-                          backgroundColor: !comparisonToggles[index] ? primaryColor : "white",
+                          backgroundColor: !comparisonToggles[index]
+                            ? primaryColor
+                            : "white",
                           borderColor: "#ccc",
                         }}
                         onClick={() =>
                           setComparisonToggles((prev) =>
-                            prev.map((t, i) => (i === index ? false : t))
+                            prev.map((t, i) => (i === index ? false : t)),
                           )
                         }
                       >
@@ -352,15 +428,19 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                       </button>
                       <button
                         className={`px-3 py-1 rounded-r ${
-                          comparisonToggles[index] ? "text-white" : "bg-white border text-black"
+                          comparisonToggles[index]
+                            ? "text-white"
+                            : "bg-white border text-black"
                         }`}
                         style={{
-                          backgroundColor: comparisonToggles[index] ? primaryColor : "white",
+                          backgroundColor: comparisonToggles[index]
+                            ? primaryColor
+                            : "white",
                           borderColor: "#ccc",
                         }}
                         onClick={() =>
                           setComparisonToggles((prev) =>
-                            prev.map((t, i) => (i === index ? true : t))
+                            prev.map((t, i) => (i === index ? true : t)),
                           )
                         }
                       >
@@ -371,7 +451,10 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                     <div className="overflow-x-auto max-w-full">
                       <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
                         {selectedItem && inputValue
-                          ? formatNumber(getComparisonValue(selectedItem), comparisonToggles[index])
+                          ? formatNumber(
+                              getComparisonValue(selectedItem),
+                              comparisonToggles[index],
+                            )
                           : ""}
                       </div>
                     </div>
@@ -381,7 +464,7 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                         selected={selectedItem}
                         setSelected={(val) =>
                           setSelectedItems((prev) =>
-                            prev.map((item, i) => (i === index ? val : item))
+                            prev.map((item, i) => (i === index ? val : item)),
                           )
                         }
                         items={realWorldItems}

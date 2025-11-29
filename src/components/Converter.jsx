@@ -278,13 +278,6 @@ function Converter({ categoryId, lang }) {
    * ----------------------- */
   return (
     <div className="space-y-10 px-4 sm:px-6 lg:px-8">
-      {categoryInfo?.top_notes && (
-        <div
-          className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded text-sm text-gray-800 mb-6"
-          dangerouslySetInnerHTML={{ __html: categoryInfo.top_notes }}
-        />
-      )}
-
       <div className="flex flex-col lg:flex-row gap-6">
         {/* LEFT PANEL - INPUT + FROM UNIT */}
         <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
