@@ -21,6 +21,12 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
   const [conversionToggle, setConversionToggle] = useState(false);
   const [comparisonToggle, setComparisonToggle] = useState(false);
 
+  const minLimits = {
+    "°C": -273.15,
+    "°F": -459.67,
+    K: 0,
+  };
+
   useEffect(() => {
     async function fetchAuxCategory() {
       if (!categoryId) return;
@@ -41,7 +47,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
       if (!categoryId) return;
 
       try {
-        // 1️⃣ Fetch units with language-specific names
+        // Fetch units with language-specific names
         const unitList = await pb.collection("units").getFullList({
           filter: `category = "${categoryId}"`,
         });
@@ -127,7 +133,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
 
     const input = parseFloat(inputValue);
 
-    // TEMPERATURE SPECIAL CASE 
+    // TEMPERATURE SPECIAL CASE
     if (auxCategory?.slug_en === "temperature") {
       const fromFactor = parseFloat(from.to_base_factor);
       const toFactor = parseFloat(to.to_base_factor);
@@ -200,21 +206,57 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
               ? isFocused
                 ? inputValue
                 : `${inputValue} ${units.find((u) => u.id === fromUnit)?.symbol || ""}`
-              : ""
+              : inputValue
           }
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onChange={(e) => {
-            const raw = e.target.value.match(/^\d*\.?\d*/)?.[0] || "";
-            if (raw === "" || (!isNaN(raw) && parseFloat(raw) >= 0)) {
-              setInputValue(raw);
-            }
-          }}
           placeholder={t("terms.enter_value")}
           className="border p-2 rounded w-full max-w-[160px] text-gray-800"
           style={{ backgroundColor: theme?.base }}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => {
+            setIsFocused(false);
+            let num = parseFloat(inputValue);
+            const from = units.find((u) => u.id === fromUnit);
+
+            if (!from || isNaN(num)) {
+              setInputValue("");
+              return;
+            }
+
+            if (auxCategory?.slug_en === "temperature") {
+              const minVal = minLimits[from.symbol] ?? num;
+              num = Math.max(num, minVal); // enforce temperature min
+            } else {
+              num = Math.max(num, 0); // enforce non-negative for other categories
+            }
+
+            setInputValue(num.toString());
+          }}
+          onChange={(e) => {
+            const raw = e.target.value;
+
+            // Allow empty input or "-" during typing
+            if (raw === "" || raw === "-") {
+              setInputValue(raw);
+              return;
+            }
+
+            // Check numeric
+            if (/^-?\d*\.?\d*$/.test(raw)) {
+              const num = parseFloat(raw);
+              if (isNaN(num)) return;
+
+              if (auxCategory?.slug_en === "temperature") {
+                const from = units.find((u) => u.id === fromUnit);
+                const minVal = minLimits[from?.symbol] ?? -Infinity;
+                if (num >= minVal) setInputValue(raw);
+              } else {
+                if (num >= 0) setInputValue(raw); // block negative numbers
+              }
+            }
+          }}
         />
 
+        {/* Unit Selector */}
         <select
           value={fromUnit}
           onChange={(e) => setFromUnit(e.target.value)}

@@ -129,7 +129,7 @@ export default function Home() {
               style={{ backgroundColor: theme?.surface }}
             >
               {activeMainCategory ? (
-                <AuxiliaryConverter categoryId={activeMainCategory.id} lang={lang} />
+                <AuxiliaryConverter key={activeMainCategory.id} categoryId={activeMainCategory.id} lang={lang} />
               ) : (
                 <p className="text-center text-gray-500">{t("messages.loading")}</p>
               )}
