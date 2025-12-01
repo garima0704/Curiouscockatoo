@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 function AuxiliaryConverter({ categoryId, lang = "en" }) {
   const theme = useTheme();
   const { t } = useTranslation();
+  const [auxCategory, setAuxCategory] = useState(null);
   const [units, setUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -21,6 +22,21 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
   const [comparisonToggle, setComparisonToggle] = useState(false);
 
   useEffect(() => {
+    async function fetchAuxCategory() {
+      if (!categoryId) return;
+
+      try {
+        const cat = await pb.collection("categories").getOne(categoryId);
+        setAuxCategory(cat);
+      } catch (err) {
+        console.error("Error fetching auxiliary category:", err);
+      }
+    }
+
+    fetchAuxCategory();
+  }, [categoryId]);
+
+  useEffect(() => {
     async function fetchData() {
       if (!categoryId) return;
 
@@ -30,12 +46,14 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
           filter: `category = "${categoryId}"`,
         });
 
-        const sortedUnits = unitList.sort((a, b) => a.to_base_factor - b.to_base_factor);
+        const sortedUnits = unitList.sort(
+          (a, b) => a.to_base_factor - b.to_base_factor,
+        );
 
         // Map unit names based on language
         const localizedUnits = sortedUnits.map((u) => ({
           ...u,
-          name: u[`name_${lang}`] || u.name, // e.g., name_es
+          name: u[`name_${lang}`] || u.name,
         }));
 
         setUnits(localizedUnits);
@@ -44,7 +62,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
           setToUnit(localizedUnits[0].id);
         }
 
-        // 2️⃣ Fetch real-world items with language-specific names
+        // Fetch real-world items with language-specific names
         const realItems = await pb.collection("realworld_items").getFullList({
           filter: `category = "${categoryId}"`,
           expand: "unit",
@@ -56,24 +74,31 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
         }));
 
         // Split forced-last items from normal
-        const forcedItems = localizedItems.filter((i) => i.force_last_position === true);
-        const normalItems = localizedItems.filter((i) => i.force_last_position !== true);
+        const forcedItems = localizedItems.filter(
+          (i) => i.force_last_position === true,
+        );
+        const normalItems = localizedItems.filter(
+          (i) => i.force_last_position !== true,
+        );
 
         const sortedNormal = normalItems.sort((a, b) => {
           const aVal =
             typeof a.approx_value === "string"
               ? parseScientific(a.approx_value)
-              : a.approx_value ?? a.scientific_value ?? 0;
+              : (a.approx_value ?? a.scientific_value ?? 0);
           const bVal =
             typeof b.approx_value === "string"
               ? parseScientific(b.approx_value)
-              : b.approx_value ?? b.scientific_value ?? 0;
+              : (b.approx_value ?? b.scientific_value ?? 0);
           return aVal - bVal;
         });
 
         const sortedReal = [...sortedNormal, ...forcedItems].map((item) => {
           const sciVal = parseScientific(item.scientific_value);
-          return { ...item, exponent: sciVal ? Math.floor(Math.log10(sciVal)) : null };
+          return {
+            ...item,
+            exponent: sciVal ? Math.floor(Math.log10(sciVal)) : null,
+          };
         });
 
         const withBlanks = distributeBlankCards(sortedReal, 9);
@@ -93,27 +118,79 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
     }
 
     fetchData();
-  }, [categoryId, lang]); // 🔑 Added lang dependency
+  }, [categoryId, lang]);
 
-  const getConvertedValue = (overrideToUnit = null) => {
+  const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
-    const to = units.find((u) => u.id === (overrideToUnit || toUnit));
+    const to = units.find((u) => u.id === toUnitId);
     if (!from || !to || !inputValue) return null;
-    const baseValue = parseFloat(inputValue) * from.to_base_factor;
+
+    const input = parseFloat(inputValue);
+
+    // TEMPERATURE SPECIAL CASE 
+    if (auxCategory?.slug_en === "temperature") {
+      const fromFactor = parseFloat(from.to_base_factor);
+      const toFactor = parseFloat(to.to_base_factor);
+      const fromOffset = parseFloat(from.offset || 0);
+      const toOffset = parseFloat(to.offset || 0);
+
+      if ([fromFactor, toFactor].some(isNaN)) return null;
+
+      const kelvin = (input + fromOffset) * fromFactor;
+      return kelvin / toFactor - toOffset;
+    }
+
+    // NORMAL CASE
+    const baseValue = input * from.to_base_factor;
     return baseValue / to.to_base_factor;
   };
 
-  const getComparisonValue = () => {
+  const getComparisonValue = (item) => {
+    if (!item || !inputValue) return null;
+
     const from = units.find((u) => u.id === fromUnit);
-    const inputNum = Number(inputValue);
-    const approx = selectedItem?.approx_value;
-    if (!from || isNaN(inputNum) || !approx) return null;
-    const baseValue = inputNum * from.to_base_factor;
-    return baseValue / approx;
+    if (!from) return null;
+
+    const input = parseFloat(inputValue);
+
+    // Apply temperature conversion if this is temperature
+    if (auxCategory?.slug_en === "temperature") {
+      const fromFactor = parseFloat(from.to_base_factor);
+      const fromOffset = parseFloat(from.offset || 0);
+
+      if (isNaN(fromFactor)) return null;
+
+      // Convert input to Kelvin
+      const kelvin = (input + fromOffset) * fromFactor;
+
+      const comparisonValueRaw =
+        parseFloat(item.expression_value) ||
+        parseFloat(item.approx_value) ||
+        parseFloat(item.scientific_value);
+
+      if (!comparisonValueRaw || isNaN(comparisonValueRaw)) return null;
+
+      return kelvin / comparisonValueRaw;
+    }
+
+    // NORMAL comparison for other categories
+    const baseValue = input * from.to_base_factor;
+
+    const comparisonValueRaw =
+      parseFloat(item.expression_value) ||
+      parseFloat(item.approx_value) ||
+      parseFloat(item.scientific_value);
+
+    if (!comparisonValueRaw || isNaN(comparisonValueRaw)) return null;
+
+    return baseValue / comparisonValueRaw;
   };
 
   return (
-    <div className="flex flex-col gap-6 overflow-x-hidden" style={{ fontFamily: theme?.font }}>
+    <div
+      className="flex flex-col gap-6 overflow-x-hidden"
+      style={{ fontFamily: theme?.font }}
+    >
       {/* Input Block */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <input
@@ -192,7 +269,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
             {toUnit ? (
               inputValue && !isNaN(inputValue) ? (
                 <>
-                  {formatNumber(getConvertedValue(), conversionToggle)}{" "}
+                  {formatNumber(getConvertedValue(toUnit), conversionToggle)}{" "}
                   {units.find((u) => u.id === toUnit)?.symbol || ""}
                 </>
               ) : (
@@ -249,11 +326,18 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
               {t("terms.scientific")}
             </button>
           </div>
-		  
+
           {/* Comparison Result */}
           <div className="bg-gray-100 p-2 text-center font-bold text-sm sm:text-base rounded mb-2 min-h-[48px] text-blue-700 flex items-center justify-center whitespace-normal break-words break-all overflow-hidden max-w-full">
-            {selectedItem && inputValue && !isNaN(getComparisonValue()) ? (
-              <>{formatNumber(getComparisonValue(), comparisonToggle)} </>
+            {selectedItem &&
+            inputValue &&
+            !isNaN(getComparisonValue(selectedItem)) ? (
+              <>
+                {formatNumber(
+                  getComparisonValue(selectedItem),
+                  comparisonToggle,
+                )}{" "}
+              </>
             ) : (
               ""
             )}
