@@ -1,91 +1,83 @@
-
-
 export function distributeBlankCards(realItems, maxBlankCards = 9) {
-  const realExponents = realItems
-    .filter((item) => item.exponent !== null && !isNaN(item.exponent))
-    .map((item) => item.exponent);
+  // 1. Sort real items by exponent
+  const real = realItems
+    .filter((i) => typeof i.exponent === "number")
+    .sort((a, b) => a.exponent - b.exponent);
 
-  const sorted = [...new Set(realExponents)].sort((a, b) => a - b);
-  const blankPowers = new Set();
-  const gaps = [];
-
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const start = sorted[i];
-    const end = sorted[i + 1];
-    const gap = end - start;
-
-    if (gap <= 1) continue;
-    gaps.push({ start, end, gap });
-  }
-
+  const blanks = [];
   let remaining = maxBlankCards;
 
-  // Step 1: Fill small gaps (gap === 2)
-  for (const { start, end, gap } of gaps.filter((g) => g.gap === 2)) {
-    const power = start + 1;
-    if (!blankPowers.has(power) && remaining > 0) {
-      blankPowers.add(power);
+  // Helper to safely insert a blank
+  const insertBlank = (power) => {
+    if (
+      remaining > 0 &&
+      !blanks.some((b) => b.power === power) &&
+      !real.some((r) => r.exponent === power)
+    ) {
+      blanks.push({ type: "blank", power });
       remaining--;
     }
-  }
+  };
 
-  // Step 2: Proportional insertion
-  const proportionGaps = gaps.filter((g) => g.gap >= 3);
-  const totalInsertableSlots = proportionGaps.reduce(
-    (sum, g) => sum + (g.gap - 1),
-    0,
-  );
+  // ------------------------------------------------
+  // PASS 1: gaps of 1–2 → fill all missing powers
+  // ------------------------------------------------
+  for (let i = 0; i < real.length - 1 && remaining > 0; i++) {
+    const start = real[i].exponent;
+    const end = real[i + 1].exponent;
+    const gap = end - start - 1;
 
-  const insertPlan = [];
-
-  for (const { start, end, gap } of proportionGaps) {
-    const insertableSlots = gap - 1;
-    const proportionalShare = Math.floor(
-      (insertableSlots / totalInsertableSlots) * remaining,
-    );
-    insertPlan.push({ start, end, insertCount: proportionalShare });
-  }
-
-  // Calculate total inserted so far and fix under-allocation
-  let used = insertPlan.reduce((sum, g) => sum + g.insertCount, 0);
-  let deficit = remaining - used;
-
-  // Distribute remaining slots one by one to gaps that can still take more
-  for (let i = 0; i < insertPlan.length && deficit > 0; i++) {
-    const g = insertPlan[i];
-    const maxInsertable = g.end - g.start - 1;
-    if (g.insertCount < maxInsertable) {
-      g.insertCount++;
-      deficit--;
-    }
-  }
-
-  // Now insert into actual positions
-  for (const { start, end, insertCount } of insertPlan) {
-    const step = (end - start) / (insertCount + 1);
-    for (let i = 1; i <= insertCount; i++) {
-      const power = Math.round(start + step * i);
-      if (
-        !blankPowers.has(power) &&
-        !sorted.includes(power) &&
-        blankPowers.size < maxBlankCards
-      ) {
-        blankPowers.add(power);
+    if (gap > 0 && gap <= 2) {
+      for (let p = start + 1; p < end && remaining > 0; p++) {
+        insertBlank(p);
       }
     }
   }
 
-  // Combine real and blank items
-  const allItems = [
-    ...realItems.map((item) => ({
+  // ------------------------------------------------
+  // PASS 2: gaps of 3–4 → insert every 2nd power
+  // ------------------------------------------------
+  for (let i = 0; i < real.length - 1 && remaining > 0; i++) {
+    const start = real[i].exponent;
+    const end = real[i + 1].exponent;
+    const gap = end - start - 1;
+
+    if (gap >= 3 && gap <= 4) {
+      for (let p = start + 1; p < end && remaining > 0; p += 2) {
+        insertBlank(p);
+      }
+    }
+  }
+
+  // ------------------------------------------------
+  // PASS 3: gaps ≥ 5 → sparse, evenly spread
+  // ------------------------------------------------
+  for (let i = 0; i < real.length - 1 && remaining > 0; i++) {
+    const start = real[i].exponent;
+    const end = real[i + 1].exponent;
+    const gap = end - start - 1;
+
+    if (gap >= 5) {
+      const step = Math.ceil(gap / 3); // sparse but ordered
+      for (
+        let p = start + step;
+        p < end && remaining > 0;
+        p += step
+      ) {
+        insertBlank(p);
+      }
+    }
+  }
+
+  // ------------------------------------------------
+  // Combine real + blank items
+  // ------------------------------------------------
+  return [
+    ...real.map((item) => ({
       ...item,
       type: "real",
       power: item.exponent,
     })),
-    ...[...blankPowers].map((power) => ({
-      type: "blank",
-      power,
-    })),
-  ];
-  return allItems.sort((a, b) => a.power - b.power);
+    ...blanks,
+  ].sort((a, b) => a.power - b.power);
 }

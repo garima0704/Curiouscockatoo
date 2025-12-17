@@ -20,6 +20,11 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [conversionToggle, setConversionToggle] = useState(false);
   const [comparisonToggle, setComparisonToggle] = useState(false);
+  
+  useEffect(() => {
+  setInputValue("");        
+  setSelectedItem(null);   
+}, [fromUnit]);
 
   const minLimits = {
     "°C": -273.15,

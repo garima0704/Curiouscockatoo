@@ -8,6 +8,7 @@ import AllConverters from "../components/AllConverters";
 import ContactSection from "../components/ContactSection";
 import { useTheme } from "../context/ThemeContext";
 import { useTranslation } from "react-i18next";
+import { Helmet } from "react-helmet-async"; 
 
 export default function Home() {
   const theme = useTheme();
@@ -21,11 +22,26 @@ export default function Home() {
   const [activeMainCategory, setActiveMainCategory] = useState(null);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [submitStatus, setSubmitStatus] = useState("");
+  const [seoData, setSeoData] = useState(null);
 
   // Update i18n language
   useEffect(() => {
     if (lang && i18n.language !== lang) i18n.changeLanguage(lang);
   }, [lang, i18n]);
+  
+  useEffect(() => {
+  const fetchSEO = async () => {
+    try {
+      const data = await pb
+        .collection("seo_pages")
+        .getFirstListItem(`slug="home" && lang="${lang}"`);
+      setSeoData(data);
+    } catch (err) {
+      console.error("Error fetching SEO:", err);
+    }
+  };
+  fetchSEO();
+}, [lang]);
 
   // Fetch main categories (is_main = true) and all categories
   useEffect(() => {
@@ -90,6 +106,31 @@ export default function Home() {
       className="min-h-screen flex flex-col text-gray-800"
       style={{ backgroundColor: theme?.base, fontFamily: theme?.font }}
     >
+	    {/* Dynamic SEO from PocketBase */}
+    {seoData && (
+      <Helmet>
+        <title>{seoData.meta_title}</title>
+        <meta name="description" content={seoData.meta_description} />
+        <meta name="keywords" content={seoData.keywords} />
+        <link
+          rel="canonical"
+          href={`https://curiouscockatoo.com/${lang}/${seoData.slug}`}
+        />
+
+        <meta property="og:title" content={seoData.meta_title} />
+        <meta property="og:description" content={seoData.meta_description} />
+        <meta
+          property="og:url"
+          content={`https://curiouscockatoo.com/${lang}/${seoData.slug}`}
+        />
+        <meta property="og:type" content="website" />
+        {seoData.og_image && (
+          <meta property="og:image" content={seoData.og_image} />
+        )}
+        <meta name="twitter:card" content="summary_large_image" />
+        {!seoData.indexable && <meta name="robots" content="noindex" />}
+      </Helmet>
+    )}
       <Header />
 
       <main className="flex-grow pt-32 sm:pt-36">

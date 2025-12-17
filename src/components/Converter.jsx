@@ -18,6 +18,10 @@ function Converter({ categoryId, lang }) {
   const { t, i18n } = useTranslation();
   const activeLang = lang || i18n.language || "en";
   const primaryColor = theme?.primary || "#2b66e6";
+  
+  
+  const getPower = (item) =>
+    item.type === "blank" ? item.power : item.exponent;
 
   const [units, setUnits] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -175,17 +179,10 @@ function Converter({ categoryId, lang }) {
         /** INSERT blank cards between exponent jumps */
         const enriched = distributeBlankCards(safe, 9);
 
-        enriched.sort((a, b) => {
-          const aF = a.force_last_position && valid(a);
-          const bF = b.force_last_position && valid(b);
-          if (aF && !bF) return 1;
-          if (!aF && bF) return -1;
-          return (a.exponent ?? 0) - (b.exponent ?? 0);
-        });
-
         const finalItems = [...enriched, ...forceZero].sort(
-          (a, b) => (a.exponent ?? 0) - (b.exponent ?? 0),
-        );
+  (a, b) => getPower(a) - getPower(b)
+);
+
 
         setRealWorldItems(finalItems);
 
