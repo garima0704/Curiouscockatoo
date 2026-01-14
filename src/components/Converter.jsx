@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import pb from "../utils/pocketbaseClient";
 import RealWorldBox from "./RealWorldBox";
-import { formatNumber } from "../utils/formatNumber";
+import {formatNumber,formatNumberString,} from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
 import MolConverter from "./MolConverter";
@@ -18,24 +18,33 @@ function Converter({ categoryId, lang }) {
   const { t, i18n } = useTranslation();
   const activeLang = lang || i18n.language || "en";
   const primaryColor = theme?.primary || "#2b66e6";
-  
-  
+
   const getPower = (item) =>
     item.type === "blank" ? item.power : item.exponent;
 
   const [units, setUnits] = useState([]);
   const [inputValue, setInputValue] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
+  
   const [fromUnit, setFromUnit] = useState("");
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
-  const [comparisonToggles, setComparisonToggles] = useState([false,false,false,]);
-  const [conversionToggles, setConversionToggles] = useState([false,false,false,]);
+  const [comparisonToggles, setComparisonToggles] = useState([
+    false,
+    false,
+    false,
+  ]);
+  const [conversionToggles, setConversionToggles] = useState([
+    false,
+    false,
+    false,
+  ]);
   const [categoryInfo, setCategoryInfo] = useState(null);
+  const [inputScientific, setInputScientific] = useState(false);
+
 
   /** -------------------------------------------------
-   *  FETCH UNITS + CATEGORY  
+   *  FETCH UNITS + CATEGORY
    * ------------------------------------------------- */
   useEffect(() => {
     if (!categoryId) return;
@@ -79,7 +88,7 @@ function Converter({ categoryId, lang }) {
                 ? u.name_es || u.name_en || ""
                 : u.name_en || u.name_es || "";
 
-            const { name, ...rest } = u; 
+            const { name, ...rest } = u;
 
             return {
               ...rest,
@@ -114,6 +123,21 @@ function Converter({ categoryId, lang }) {
 
     load();
   }, [categoryId, activeLang]);
+  
+ const formatInputDisplay = () => {
+  if (!inputValue) return "";
+
+  const num = Number(inputValue);
+  if (isNaN(num)) return "";
+
+  if (!inputScientific) return inputValue;
+
+  // ✅ STRING ONLY formatter
+  return formatNumberString(num, true);
+};
+
+
+
 
   /** -------------------------------------------------
    *  FETCH REAL WORLD ITEMS
@@ -180,9 +204,8 @@ function Converter({ categoryId, lang }) {
         const enriched = distributeBlankCards(safe, 9);
 
         const finalItems = [...enriched, ...forceZero].sort(
-  (a, b) => getPower(a) - getPower(b)
-);
-
+          (a, b) => getPower(a) - getPower(b),
+        );
 
         setRealWorldItems(finalItems);
 
@@ -217,10 +240,13 @@ function Converter({ categoryId, lang }) {
   /** Specialized converter routing */
   const catSlug = categoryInfo?.slug_en?.toLowerCase() || "";
   if (catSlug === "mol") return <MolConverter categoryId={categoryId} />;
-  if (catSlug === "temperature") return <TemperatureConverter categoryId={categoryId} />;
-  if (catSlug === "refractive-index") return <RefractiveIndexConverter categoryId={categoryId} />;
+  if (catSlug === "temperature")
+    return <TemperatureConverter categoryId={categoryId} />;
+  if (catSlug === "refractive-index")
+    return <RefractiveIndexConverter categoryId={categoryId} />;
   if (catSlug === "angle") return <AngleConverter categoryId={categoryId} />;
-  if (catSlug === "sound-level") return <SoundLevelConverter categoryId={categoryId} />;
+  if (catSlug === "sound-level")
+    return <SoundLevelConverter categoryId={categoryId} />;
 
   /** -----------------------
    *   MAIN CONVERSION
@@ -278,27 +304,58 @@ function Converter({ categoryId, lang }) {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* LEFT PANEL - INPUT + FROM UNIT */}
         <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
+		
+
+
           <div className="relative w-full">
+		  		<div className="flex justify-center gap-2 mb-2">
+  <button
+    className={`px-3 py-1 rounded-l ${
+      !inputScientific ? "text-white" : "bg-white border text-black"
+    }`}
+    style={{
+      borderColor: "#ccc",
+      backgroundColor: !inputScientific ? primaryColor : "white",
+    }}
+    onClick={() => setInputScientific(false)}
+  >
+    {t("terms.general")}
+  </button>
+
+  <button
+    className={`px-3 py-1 rounded-r ${
+      inputScientific ? "text-white" : "bg-white border text-black"
+    }`}
+    style={{
+      borderColor: "#ccc",
+      backgroundColor: inputScientific ? primaryColor : "white",
+    }}
+    onClick={() => setInputScientific(true)}
+  >
+    {t("terms.scientific")}
+  </button>
+</div>
             <input
-              type="text"
-              value={
-                isFocused || !fromUnit
-                  ? inputValue
-                  : inputValue
-                    ? `${inputValue} ${units.find((u) => u.id === fromUnit)?.symbol || ""}`
-                    : ""
-              }
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onChange={(e) => {
-                const raw = e.target.value.match(/^\d*\.?\d*/)?.[0] || "";
-                if (raw === "" || (!isNaN(raw) && parseFloat(raw) >= 0)) {
-                  setInputValue(raw);
-                }
-              }}
-              placeholder={t("terms.enter_value")}
-              className="border p-2 rounded w-full text-left font-mono"
-            />
+  type="text"
+  value={inputScientific ? formatInputDisplay() : inputValue}
+  readOnly={inputScientific}
+  onChange={(e) => {
+    if (inputScientific) return;
+
+    const raw = e.target.value.match(/^\d*\.?\d*/)?.[0] || "";
+    if (raw === "" || (!isNaN(raw) && parseFloat(raw) >= 0)) {
+      setInputValue(raw);
+    }
+  }}
+  placeholder={t("terms.enter_value")}
+  className={`border p-2 rounded w-full font-mono ${
+  inputScientific ? "bg-white cursor-default" : ""
+}`}
+
+/>
+
+
+
           </div>
 
           <div className="border rounded max-h-40 overflow-y-auto w-full text-sm space-y-1 bg-white">
