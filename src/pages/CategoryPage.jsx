@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async"; 
 import pb from "../utils/pocketbaseClient";
 import AuxiliaryConverter from "../components/AuxiliaryConverter";
 import Converter from "../components/Converter";
@@ -7,6 +8,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useTheme } from "../context/ThemeContext";
 import { useTranslation } from "react-i18next";
+
 
 function CategoryPage({ lang, categorySlug }) {
   const theme = useTheme();
@@ -18,11 +20,39 @@ function CategoryPage({ lang, categorySlug }) {
   const [topNote, setTopNote] = useState("");
   const [prefixes, setPrefixes] = useState([]);
   const [error, setError] = useState(null);
+  const [seoData, setSeoData] = useState(null);
+
 
   // Change language based on prop
   useEffect(() => {
     if (lang && i18n.language !== lang) i18n.changeLanguage(lang);
   }, [lang, i18n]);
+  
+  useEffect(() => {
+  const fetchSEO = async () => {
+    if (!categorySlug) return;
+
+    try {
+      const seoSlug = `category/${categorySlug}`;
+
+      const data = await pb
+        .collection("seo_pages")
+        .getFirstListItem(
+          `slug="${seoSlug}" && lang="${lang}"`
+        );
+
+      setSeoData(data);
+    } catch (err) {
+      // Ignore missing SEO page (normal case)
+      if (err.status !== 404) {
+        console.error("Error fetching SEO:", err);
+      }
+    }
+  };
+
+  fetchSEO();
+}, [lang, categorySlug]);
+
 
   // Fetch main category and auxiliaries
   useEffect(() => {
@@ -101,6 +131,30 @@ function CategoryPage({ lang, categorySlug }) {
         fontFamily: theme?.font,
       }}
     >
+	
+	{seoData && (
+  <Helmet>
+    <title>{seoData.meta_title}</title>
+    <meta name="description" content={seoData.meta_description} />
+    <meta name="keywords" content={seoData.keywords} />
+    <link
+      rel="canonical"
+      href={`https://curiouscockatoo.com/${lang}/category/${seoData.slug}`}
+    />
+
+    <meta property="og:title" content={seoData.meta_title} />
+    <meta property="og:description" content={seoData.meta_description} />
+    <meta
+      property="og:url"
+      content={`https://curiouscockatoo.com/${lang}/category/${seoData.slug}`}
+    />
+    <meta property="og:type" content="website" />
+    {seoData.og_image && <meta property="og:image" content={seoData.og_image} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    {!seoData.indexable && <meta name="robots" content="noindex" />}
+  </Helmet>
+)}
+
       <Header />
 
       <main className="flex-grow pt-24 pb-10">

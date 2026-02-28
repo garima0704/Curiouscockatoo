@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import pb from "../utils/pocketbaseClient";
 import RealWorldBox from "./RealWorldBox";
-import {formatNumber,formatNumberString,} from "../utils/formatNumber";
+import { formatNumber, formatNumberString } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
 import MolConverter from "./MolConverter";
@@ -12,6 +12,7 @@ import SoundLevelConverter from "./SoundLevelConverter";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
 import { useTranslation } from "react-i18next";
+import { normalizeNumber } from "../utils/normalize";
 
 function Converter({ categoryId, lang }) {
   const theme = useTheme();
@@ -24,24 +25,15 @@ function Converter({ categoryId, lang }) {
 
   const [units, setUnits] = useState([]);
   const [inputValue, setInputValue] = useState("");
-  
+
   const [fromUnit, setFromUnit] = useState("");
   const [selectedUnits, setSelectedUnits] = useState([]);
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
-  const [comparisonToggles, setComparisonToggles] = useState([
-    false,
-    false,
-    false,
-  ]);
-  const [conversionToggles, setConversionToggles] = useState([
-    false,
-    false,
-    false,
-  ]);
+  const [comparisonToggles, setComparisonToggles] = useState([false,false,false,]);
+  const [conversionToggles, setConversionToggles] = useState([false,false,false,]);
   const [categoryInfo, setCategoryInfo] = useState(null);
   const [inputScientific, setInputScientific] = useState(false);
-
 
   /** -------------------------------------------------
    *  FETCH UNITS + CATEGORY
@@ -123,21 +115,19 @@ function Converter({ categoryId, lang }) {
 
     load();
   }, [categoryId, activeLang]);
-  
- const formatInputDisplay = () => {
-  if (!inputValue) return "";
 
-  const num = Number(inputValue);
-  if (isNaN(num)) return "";
+  /** -------------------------------------------------
+   *  TABS FOR USER INPUT
+   * ------------------------------------------------- */
+  const formatInputDisplay = () => {
+    if (!inputValue) return "";
 
-  if (!inputScientific) return inputValue;
+    const num = Number(inputValue);
+    if (isNaN(num)) return "";
 
-  // ✅ STRING ONLY formatter
-  return formatNumberString(num, true);
-};
-
-
-
+    if (!inputScientific) return inputValue;
+    return formatNumberString(num, true);
+  };
 
   /** -------------------------------------------------
    *  FETCH REAL WORLD ITEMS
@@ -267,7 +257,7 @@ function Converter({ categoryId, lang }) {
     const toF = parseF(to.to_base_factor);
 
     if (isNaN(fromF) || isNaN(toF) || toF === 0) return null;
-    return (x * fromF) / toF;
+    return normalizeNumber((x * fromF) / toF);
   };
 
   const compare = (item) => {
@@ -304,58 +294,51 @@ function Converter({ categoryId, lang }) {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* LEFT PANEL - INPUT + FROM UNIT */}
         <div className="w-full lg:w-64 flex flex-col items-center justify-center gap-4">
-		
-
-
           <div className="relative w-full">
-		  		<div className="flex justify-center gap-2 mb-2">
-  <button
-    className={`px-3 py-1 rounded-l ${
-      !inputScientific ? "text-white" : "bg-white border text-black"
-    }`}
-    style={{
-      borderColor: "#ccc",
-      backgroundColor: !inputScientific ? primaryColor : "white",
-    }}
-    onClick={() => setInputScientific(false)}
-  >
-    {t("terms.general")}
-  </button>
+            <div className="flex justify-center gap-2 mb-2">
+              <button
+                className={`px-3 py-1 rounded-l ${
+                  !inputScientific ? "text-white" : "bg-white border text-black"
+                }`}
+                style={{
+                  borderColor: "#ccc",
+                  backgroundColor: !inputScientific ? primaryColor : "white",
+                }}
+                onClick={() => setInputScientific(false)}
+              >
+                {t("terms.general")}
+              </button>
 
-  <button
-    className={`px-3 py-1 rounded-r ${
-      inputScientific ? "text-white" : "bg-white border text-black"
-    }`}
-    style={{
-      borderColor: "#ccc",
-      backgroundColor: inputScientific ? primaryColor : "white",
-    }}
-    onClick={() => setInputScientific(true)}
-  >
-    {t("terms.scientific")}
-  </button>
-</div>
+              <button
+                className={`px-3 py-1 rounded-r ${
+                  inputScientific ? "text-white" : "bg-white border text-black"
+                }`}
+                style={{
+                  borderColor: "#ccc",
+                  backgroundColor: inputScientific ? primaryColor : "white",
+                }}
+                onClick={() => setInputScientific(true)}
+              >
+                {t("terms.scientific")}
+              </button>
+            </div>
             <input
-  type="text"
-  value={inputScientific ? formatInputDisplay() : inputValue}
-  readOnly={inputScientific}
-  onChange={(e) => {
-    if (inputScientific) return;
+              type="text"
+              value={inputScientific ? formatInputDisplay() : inputValue}
+              readOnly={inputScientific}
+              onChange={(e) => {
+                if (inputScientific) return;
 
-    const raw = e.target.value.match(/^\d*\.?\d*/)?.[0] || "";
-    if (raw === "" || (!isNaN(raw) && parseFloat(raw) >= 0)) {
-      setInputValue(raw);
-    }
-  }}
-  placeholder={t("terms.enter_value")}
-  className={`border p-2 rounded w-full font-mono ${
-  inputScientific ? "bg-white cursor-default" : ""
-}`}
-
-/>
-
-
-
+                const raw = e.target.value.match(/^\d*\.?\d*/)?.[0] || "";
+                if (raw === "" || (!isNaN(raw) && parseFloat(raw) >= 0)) {
+                  setInputValue(raw);
+                }
+              }}
+              placeholder={t("terms.enter_value")}
+              className={`border p-2 rounded w-full font-mono ${
+                inputScientific ? "bg-white cursor-default" : ""
+              }`}
+            />
           </div>
 
           <div className="border rounded max-h-40 overflow-y-auto w-full text-sm space-y-1 bg-white">
