@@ -22,6 +22,13 @@ function RealWorldBox({
   const { i18n } = useTranslation();
   const lang = i18n?.language || "en";
 
+const shouldUseScientificForRealWorld = (value) => {
+  if (value == null || isNaN(value)) return false;
+
+  const abs = Math.abs(Number(value));
+  return abs > 1e8 || (abs !== 0 && abs < 1e-4);
+};
+
   return (
     <div
       className="pr-1 flex flex-col gap-3 overflow-y-auto"
@@ -87,19 +94,28 @@ function RealWorldBox({
         })();
 
         const displayValue = localizedExpression ? (
-          <span dangerouslySetInnerHTML={{ __html: localizedExpression }} />
-        ) : approxNumeric != null && !isNaN(approxNumeric) ? (
-          <>
-            {formatNumber(approxNumeric, String(item.approx_value).includes("e"), true)}{" "}
-            <span className="unit-symbol">{unitSymbol}</span>
-          </>
-        ) : sciNumeric != null && !isNaN(sciNumeric) ? (
-          <>
-            {formatNumber(sciNumeric, scientificToggle)} <span className="unit-symbol">{unitSymbol}</span>
-          </>
-        ) : (
-          "..."
-        );
+  <span dangerouslySetInnerHTML={{ __html: localizedExpression }} />
+) : approxNumeric != null && !isNaN(approxNumeric) ? (() => {
+    const useSci = shouldUseScientificForRealWorld(approxNumeric);
+
+  return (
+    <>
+      {formatNumber(approxNumeric, useSci, true)}{" "}
+      <span className="unit-symbol">{unitSymbol}</span>
+    </>
+  );
+})() : sciNumeric != null && !isNaN(sciNumeric) ? (() => {
+  const useSci = shouldUseScientificForRealWorld(sciNumeric);
+
+  return (
+    <>
+      {formatNumber(sciNumeric, useSci)}{" "}
+      <span className="unit-symbol">{unitSymbol}</span>
+    </>
+  );
+})() : (
+  "..."
+);
 
         return (
           <div

@@ -193,9 +193,7 @@ function Converter({ categoryId, lang }) {
         /** INSERT blank cards between exponent jumps */
         const enriched = distributeBlankCards(safe, 9);
 
-        const finalItems = [...enriched, ...forceZero].sort(
-          (a, b) => getPower(a) - getPower(b),
-        );
+        const finalItems = [...enriched, ...forceZero];
 
         setRealWorldItems(finalItems);
 
