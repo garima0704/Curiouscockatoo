@@ -110,21 +110,54 @@ export default function Home() {
     {seoData && (
   <Helmet>
     <title>{seoData.meta_title}</title>
-    <meta name="description" content={seoData.meta_description} />
-    <meta name="keywords" content={seoData.keywords} />
-    <link
-      rel="canonical"
-      href={`https://curiouscockatoo.com/${lang}/${seoData.slug}`}
+
+    <meta
+      name="description"
+      content={seoData.meta_description}
     />
 
-    <meta property="og:title" content={seoData.meta_title} />
-    <meta property="og:description" content={seoData.meta_description} />
     <meta
-      property="og:url"
-      content={`https://curiouscockatoo.com/${lang}/${seoData.slug}`}
+      name="keywords"
+      content={seoData.keywords}
     />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+
+    {(() => {
+      const pageUrl =
+        seoData.slug === "home"
+          ? `https://curiouscockatoo.com/${lang}`
+          : `https://curiouscockatoo.com/${lang}/${seoData.slug}`;
+
+      return (
+        <>
+          <link rel="canonical" href={pageUrl} />
+
+          <meta
+            property="og:title"
+            content={seoData.meta_title}
+          />
+
+          <meta
+            property="og:description"
+            content={seoData.meta_description}
+          />
+
+          <meta
+            property="og:url"
+            content={pageUrl}
+          />
+
+          <meta
+            property="og:type"
+            content="website"
+          />
+
+          <meta
+            name="twitter:card"
+            content="summary_large_image"
+          />
+        </>
+      );
+    })()}
   </Helmet>
 )}
 
