@@ -14,7 +14,6 @@ export default function Home() {
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { lang } = useParams();
-  console.log("lang =", lang);
   const navigate = useNavigate();
 
   // State
