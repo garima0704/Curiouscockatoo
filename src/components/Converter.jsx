@@ -254,16 +254,17 @@ function Converter({ categoryId, lang }) {
     const toF = parseF(to.to_base_factor);
 
     if (isNaN(fromF) || isNaN(toF) || toF === 0) return null;
-    return (x * fromF) / toF;
-    console.log({
-  from: from.name,
-  to: to.name,
-  fromF,
-  toF,
-  result,
-});
+    
+    const result = (x * fromF) / toF;
+        console.log({
+            from: from.name,
+            to: to.name,
+            fromF,
+            toF,
+            result,
+        });
 
-return result;
+      return result;
   };
 
   const compare = (item) => {
