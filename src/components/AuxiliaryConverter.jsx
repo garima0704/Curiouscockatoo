@@ -6,7 +6,6 @@ import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import { useTranslation } from "react-i18next";
-import { normalizeNumber } from "../utils/normalize";
 
 function AuxiliaryConverter({ categoryId, lang = "en" }) {
   const theme = useTheme();
@@ -154,7 +153,7 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
 
     // NORMAL CASE
     const baseValue = input * from.to_base_factor;
-    return normalizeNumber(baseValue / to.to_base_factor);
+    return (baseValue / to.to_base_factor);
   };
 
   const getComparisonValue = (item) => {
