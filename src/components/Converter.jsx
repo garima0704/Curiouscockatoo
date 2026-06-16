@@ -255,6 +255,15 @@ function Converter({ categoryId, lang }) {
 
     if (isNaN(fromF) || isNaN(toF) || toF === 0) return null;
     return (x * fromF) / toF;
+    console.log({
+  from: from.name,
+  to: to.name,
+  fromF,
+  toF,
+  result,
+});
+
+return result;
   };
 
   const compare = (item) => {
