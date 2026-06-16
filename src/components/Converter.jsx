@@ -12,7 +12,6 @@ import SoundLevelConverter from "./SoundLevelConverter";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
 import FooterNote from "./FooterNote";
 import { useTranslation } from "react-i18next";
-import { normalizeNumber } from "../utils/normalize";
 
 function Converter({ categoryId, lang }) {
   const theme = useTheme();
@@ -255,7 +254,7 @@ function Converter({ categoryId, lang }) {
     const toF = parseF(to.to_base_factor);
 
     if (isNaN(fromF) || isNaN(toF) || toF === 0) return null;
-    return normalizeNumber((x * fromF) / toF);
+    return (x * fromF) / toF;
   };
 
   const compare = (item) => {
