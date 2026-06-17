@@ -69,6 +69,10 @@ export function formatNumberString(
     const exp = expRaw.replace("+", "");
     return `${base} × 10${toSuperscriptString(exp)}`;
   }
+  return num.toLocaleString(undefined, {
+    maximumFractionDigits: approx ? 9 : 100,
+    minimumFractionDigits: 0,
+  });
 }
 
 // Convert a string like "1e-12" to "1 × 10⁻¹²"
