@@ -547,7 +547,7 @@ function Converter({ categoryId, lang }) {
                           {item && inputValue
                             ? formatNumber(
                               compare(item), 
-                              comparisonToggles[index] ? "scientific" : "general")
+                              comparisonToggles[index])
                             : ""}
                         </div>
                       </div>
