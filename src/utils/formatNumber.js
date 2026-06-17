@@ -44,6 +44,7 @@ export function formatNumber(value, forceScientific = false, approx = false) {
   }
 
   const num = Number(value);
+  console.log("formatNumber:", num);
 
 if (num !== 0 && (Math.abs(num) < 1e-9 || Math.abs(num) >= 1e15)) {
   const [base, expRaw] = num.toExponential(6).split("e");
