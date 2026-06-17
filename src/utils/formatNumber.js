@@ -59,7 +59,7 @@ if (num !== 0 && Math.abs(num) >= 1e15) {
   );
 }
    return num.toLocaleString(undefined, {
-    maximumFractionDigits: approx ? 9 : 20,
+    maximumFractionDigits: approx ? 9 : 100,
     minimumFractionDigits: 0,
   });
 }
@@ -87,7 +87,7 @@ export function formatNumberString(
   return `${base} × 10${toSuperscriptString(exp)}`;
 }
    return num.toLocaleString(undefined, {
-    maximumFractionDigits: approx ? 9 : 20,
+    maximumFractionDigits: approx ? 9 : 100,
     minimumFractionDigits: 0,
   });
 }
