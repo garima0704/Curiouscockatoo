@@ -23,7 +23,6 @@ function AngleConverter({ categoryId, lang }) {
 
   const [fromComparisonUnit, setFromComparisonUnit] = useState("");
   const [comparisonValue, setComparisonValue] = useState("1");
-  const [comparisonToggles, setComparisonToggles] = useState([false, false, false]);
 
   const [realWorldItems, setRealWorldItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([null, null, null]);
@@ -305,23 +304,6 @@ function AngleConverter({ categoryId, lang }) {
 
             return (
               <div key={idx} className="p-4 rounded shadow flex flex-col gap-3" style={{ backgroundColor: theme?.box }}>
-                <div className="flex justify-center gap-2">
-                  <button
-                    className={`px-3 py-1 rounded-l ${!comparisonToggles[idx] ? "text-white" : "bg-white border text-black"}`}
-                    style={{ backgroundColor: !comparisonToggles[idx] ? primaryColor : "white" }}
-                    onClick={() => setComparisonToggles((prev) => prev.map((t, i) => (i === idx ? false : t)))}
-                  >
-                    {t("terms.general")}
-                  </button>
-                  <button
-                    className={`px-3 py-1 rounded-r ${comparisonToggles[idx] ? "text-white" : "bg-white border text-black"}`}
-                    style={{ backgroundColor: comparisonToggles[idx] ? primaryColor : "white" }}
-                    onClick={() => setComparisonToggles((prev) => prev.map((t, i) => (i === idx ? true : t)))}
-                  >
-                    {t("terms.scientific")}
-                  </button>
-                </div>
-
                 <div className="text-center font-semibold text-gray-700 text-sm">{t("terms.arc_length")}</div>
                 <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold flex flex-col justify-center min-h-[48px]">
                   <div>{matchedItem?.arc_length_value || t("terms.no_match")}</div>
