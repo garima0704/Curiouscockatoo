@@ -207,6 +207,13 @@ function AngleConverter({ categoryId, lang }) {
 
             {selectedConversionUnits.map((toUnitId, idx) => {
               const current = getUnitById(toUnitId);
+              const converted = getConvertedValue(toUnitId);
+
+              console.log("converted:", converted);
+              console.log(
+                "formatted:",
+                formatNumber(converted, conversionToggles[idx])
+               );
               return (
                 <div key={idx} className="p-4 rounded shadow flex flex-col gap-3" style={{ backgroundColor: theme?.box }}>
                   <div className="flex justify-center gap-2">
