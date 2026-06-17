@@ -546,9 +546,8 @@ function Converter({ categoryId, lang }) {
                         <div className="break-super break-words whitespace-normal">
                           {item && inputValue
                             ? formatNumber(
-                                compare(item),
-                                comparisonToggles[index],
-                              )
+                              compare(item), 
+                              comparisonToggles[index] ? "scientific" : "general")
                             : ""}
                         </div>
                       </div>
