@@ -234,9 +234,14 @@ function AngleConverter({ categoryId, lang }) {
                   </div>
 
                   <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold min-h-[48px] flex items-center justify-center">
-                    {getConvertedValue(toUnitId) != null
-                      ? `${formatNumber(getConvertedValue(toUnitId), conversionToggles[idx])} ${current?.symbol || ""}`
-                      : current?.symbol || ""}
+                        {converted != null ? (
+                            <>
+                            {formatNumber(converted, conversionToggles[idx])}{" "}
+                            {current?.symbol || ""}
+                             </>
+                             ) : (
+                            current?.symbol || ""
+                        )}
                   </div>
 
                   <div className="border rounded max-h-36 overflow-y-auto text-sm bg-white">
