@@ -355,9 +355,17 @@ function TemperatureConverter({ categoryId, lang = "en" }) {
                       {/* Result */}
                       <div className="overflow-x-auto max-w-full">
                         <div className="bg-gray-100 p-3 rounded text-center text-blue-700 font-bold text-sm sm:text-base min-h-[48px] flex items-center justify-center">
-                          {inputValue && getConvertedValue(toUnitId) !== null
-                            ? `${formatNumber(getConvertedValue(toUnitId), conversionToggles[index])} ${currentUnit?.symbol || ""}`
-                            : currentUnit?.symbol || ""}
+                          {inputValue && getConvertedValue(toUnitId) !== null ? (
+                            <>
+                            {formatNumber(
+                              getConvertedValue(toUnitId),
+                              conversionToggles[index]
+                              )}{" "}
+                              {currentUnit?.symbol || ""}
+                              </>
+                              ) : (
+                              currentUnit?.symbol || ""
+                             )}
                         </div>
                       </div>
 
