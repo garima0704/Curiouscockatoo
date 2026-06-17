@@ -43,10 +43,24 @@ export function formatNumber(value, forceScientific = false, approx = false) {
     );
   }
 
-  return Number(value).toLocaleString(undefined, {
-    maximumFractionDigits: approx ? 9 : 20,
-    minimumFractionDigits: 0,
-  });
+  const num = Number(value);
+
+if (num !== 0 && (Math.abs(num) < 1e-9 || Math.abs(num) >= 1e15)) {
+  const [base, expRaw] = num.toExponential(6).split("e");
+  const exp = expRaw.replace("+", "");
+
+  return (
+    <span className="inline-exponent">
+      {base}&nbsp;×&nbsp;10
+      <sup className="exponent-sup">{toSuperscript(exp)}</sup>
+    </span>
+  );
+}
+
+return num.toLocaleString(undefined, {
+  maximumFractionDigits: approx ? 9 : 20,
+  minimumFractionDigits: 0,
+});
 }
 
 // For dropdown or plain text
@@ -66,10 +80,16 @@ export function formatNumberString(
     return `${base} × 10${toSuperscriptString(exp)}`;
   }
 
-  return num.toLocaleString(undefined, {
-    maximumFractionDigits: approx ? 9 : 20,
-    minimumFractionDigits: 0,
-  });
+  if (num !== 0 && (Math.abs(num) < 1e-9 || Math.abs(num) >= 1e15)) {
+  const [base, expRaw] = num.toExponential(6).split("e");
+  const exp = expRaw.replace("+", "");
+  return `${base} × 10${toSuperscriptString(exp)}`;
+}
+
+return num.toLocaleString(undefined, {
+  maximumFractionDigits: approx ? 9 : 20,
+  minimumFractionDigits: 0,
+});
 }
 
 // Convert a string like "1e-12" to "1 × 10⁻¹²"
