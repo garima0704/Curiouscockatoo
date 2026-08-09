@@ -261,6 +261,11 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
           }}
         />
 
+        {/* Debug test */}
+        <div className="text-center text-lg">
+          Test: m³ | m<sup>3</sup>
+        </div>
+
         {/* Unit Selector */}
         <select
           value={fromUnit}
