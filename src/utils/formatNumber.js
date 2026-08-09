@@ -28,6 +28,29 @@ function toSuperscriptString(exp) {
     .join("");
 }
 
+function formatDecimalGroups(value, approx = false) {
+  const num = Number(value);
+
+  if (isNaN(num)) return "...";
+
+  const formatted = num.toLocaleString("en-US", {
+    maximumFractionDigits: approx ? 9 : 100,
+    minimumFractionDigits: 0,
+    useGrouping: true,
+  });
+
+  const [integerPart, decimalPart] = formatted.split(".");
+
+  if (!decimalPart) {
+    return integerPart;
+  }
+
+  const groupedDecimal =
+    decimalPart.match(/.{1,3}/g)?.join(",") || decimalPart;
+
+  return `${integerPart}.${groupedDecimal}`;
+}
+
 // JSX version for in-component display
 export function formatNumber(value, forceScientific = false, approx = false) {
   if (value == null || isNaN(value)) return "...";
@@ -47,10 +70,7 @@ export function formatNumber(value, forceScientific = false, approx = false) {
   const num = Number(value);
   console.log("formatNumber:", num);
 
-   return num.toLocaleString(undefined, {
-    maximumFractionDigits: approx ? 9 : 100,
-    minimumFractionDigits: 0,
-  });
+   return formatDecimalGroups(num, approx);
 }
 
 // For dropdown or plain text
@@ -69,10 +89,7 @@ export function formatNumberString(
     const exp = expRaw.replace("+", "");
     return `${base} × 10${toSuperscriptString(exp)}`;
   }
-  return num.toLocaleString(undefined, {
-    maximumFractionDigits: approx ? 9 : 100,
-    minimumFractionDigits: 0,
-  });
+  return formatDecimalGroups(num, approx);
 }
 
 // Convert a string like "1e-12" to "1 × 10⁻¹²"
