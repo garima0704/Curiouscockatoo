@@ -260,17 +260,12 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
             }
           }}
         />
-
-        {/* Debug test */}
-        <div className="text-center text-lg">
-          Test: m³ | m<sup>3</sup>
-        </div>
-
+        
         {/* Unit Selector */}
         <select
           value={fromUnit}
           onChange={(e) => setFromUnit(e.target.value)}
-          className="border p-2 rounded w-full max-w-[200px] text-gray-800"
+          className="border p-2 rounded w-full sm:w-[280px] max-w-full text-gray-800"
           style={{ backgroundColor: theme?.base }}
         >
           {units.map((u) => (
