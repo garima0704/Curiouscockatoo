@@ -33,22 +33,11 @@ function formatDecimalGroups(value, approx = false) {
 
   if (isNaN(num)) return "...";
 
-  const formatted = num.toLocaleString("en-US", {
+  return num.toLocaleString("en-US", {
     maximumFractionDigits: approx ? 9 : 100,
     minimumFractionDigits: 0,
     useGrouping: true,
   });
-
-  const [integerPart, decimalPart] = formatted.split(".");
-
-  if (!decimalPart) {
-    return integerPart;
-  }
-
-  const groupedDecimal =
-    decimalPart.match(/.{1,3}/g)?.join(",") || decimalPart;
-
-  return `${integerPart}.${groupedDecimal}`;
 }
 
 // JSX version for in-component display
@@ -58,7 +47,7 @@ export function formatNumber(value, forceScientific = false, approx = false) {
   if (forceScientific) {
     const [base, expRaw] = Number(value).toExponential(2).split("e");
     const exp = expRaw.replace("+", "");
-    
+
     return (
       <span className="inline-exponent">
         {base}&nbsp;×&nbsp;10
@@ -68,9 +57,8 @@ export function formatNumber(value, forceScientific = false, approx = false) {
   }
 
   const num = Number(value);
-  console.log("formatNumber:", num);
 
-   return formatDecimalGroups(num, approx);
+  return formatDecimalGroups(num, approx);
 }
 
 // For dropdown or plain text
@@ -89,6 +77,7 @@ export function formatNumberString(
     const exp = expRaw.replace("+", "");
     return `${base} × 10${toSuperscriptString(exp)}`;
   }
+
   return formatDecimalGroups(num, approx);
 }
 
@@ -97,9 +86,11 @@ export function formatIfScientificString(value) {
   if (typeof value !== "string") return value;
 
   const sciMatch = value.match(/^([+-]?\d*\.?\d+)e([+-]?\d+)$/i);
+
   if (sciMatch) {
     const base = sciMatch[1];
     const exponent = sciMatch[2];
+
     return `${base} × 10${toSuperscriptString(exponent)}`;
   }
 
