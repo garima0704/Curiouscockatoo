@@ -28,24 +28,94 @@ function toSuperscriptString(exp) {
     .join("");
 }
 
+/**
+ * Converts a JavaScript number into a clean decimal string.
+ */
+function cleanFloatingPoint(value) {
+  const num = Number(value);
+
+  if (!Number.isFinite(num)) return "...";
+
+  if (num === 0) return "0";
+
+  // Convert through scientific notation first.
+  const scientific = num.toExponential(15);
+  const [coefficient, exponentString] = scientific.split("e");
+
+  const exponent = Number(exponentString);
+
+  // Remove unnecessary trailing zeros from the coefficient.
+  const cleanCoefficient = coefficient.replace(/\.?0+$/, "");
+
+  const [integerPart, decimalPart = ""] = cleanCoefficient.split(".");
+  const digits = integerPart + decimalPart;
+
+  // Position of the decimal point relative to the digits.
+  const decimalPosition = 1 + exponent;
+
+  let result;
+
+  if (decimalPosition <= 0) {
+    result = `0.${"0".repeat(-decimalPosition)}${digits}`;
+  } else if (decimalPosition >= digits.length) {
+    result = digits + "0".repeat(decimalPosition - digits.length);
+  } else {
+    result =
+      digits.slice(0, decimalPosition) +
+      "." +
+      digits.slice(decimalPosition);
+  }
+
+  // Remove unnecessary trailing decimal zeros.
+  result = result.replace(/(\.\d*?)0+$/, "$1");
+  result = result.replace(/\.$/, "");
+
+  // Avoid "-0".
+  if (result === "-0") return "0";
+
+  return result;
+}
+
 function formatDecimalGroups(value, approx = false) {
   const num = Number(value);
 
-  if (isNaN(num)) return "...";
+  if (!Number.isFinite(num)) return "...";
 
-  return num.toLocaleString("en-US", {
-    maximumFractionDigits: approx ? 9 : 100,
-    minimumFractionDigits: 0,
-    useGrouping: true,
-  });
+  const cleaned = cleanFloatingPoint(num);
+
+  // For approximate values
+  if (approx) {
+    return Number(cleaned).toLocaleString("en-US", {
+      maximumFractionDigits: 9,
+      minimumFractionDigits: 0,
+      useGrouping: true,
+    });
+  }
+
+  // Add thousands separators without converting the value back to Number.
+  const [integerPart, decimalPart] = cleaned.split(".");
+
+  const sign = integerPart.startsWith("-") ? "-" : "";
+  const unsignedInteger = sign ? integerPart.slice(1) : integerPart;
+
+  const groupedInteger = unsignedInteger.replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    ",",
+  );
+
+  return decimalPart
+    ? `${sign}${groupedInteger}.${decimalPart}`
+    : `${sign}${groupedInteger}`;
 }
 
 // JSX version for in-component display
 export function formatNumber(value, forceScientific = false, approx = false) {
-  if (value == null || isNaN(value)) return "...";
+  if (value == null || !Number.isFinite(Number(value))) return "...";
+
+  const num = Number(value);
 
   if (forceScientific) {
-    const [base, expRaw] = Number(value).toExponential(2).split("e");
+    const [base, expRaw] = num.toExponential(2).split("e");
     const exp = expRaw.replace("+", "");
 
     return (
@@ -56,8 +126,6 @@ export function formatNumber(value, forceScientific = false, approx = false) {
     );
   }
 
-  const num = Number(value);
-
   return formatDecimalGroups(num, approx);
 }
 
@@ -67,14 +135,14 @@ export function formatNumberString(
   forceScientific = false,
   approx = false,
 ) {
-  if (value == null) return "...";
+  if (value == null || !Number.isFinite(Number(value))) return "...";
 
   const num = Number(value);
-  if (isNaN(num)) return "...";
 
   if (forceScientific) {
     const [base, expRaw] = num.toExponential(2).split("e");
     const exp = expRaw.replace("+", "");
+
     return `${base} × 10${toSuperscriptString(exp)}`;
   }
 
