@@ -292,11 +292,7 @@ function Converter({ categoryId, lang }) {
       let raw = null;
   
       if (item.expression) {
-        try {
-          raw = parseDecimal(item.expression);
-        } catch {
-          raw = null;
-        }
+        raw = parseScientific(item.expression);
       }
   
       if (!raw && item.approx_value) {
