@@ -29,7 +29,7 @@ function toSuperscriptString(exp) {
 }
 
 /**
- * Converts a JavaScript number into a clean decimal string.
+ * Convert a JavaScript number into a clean decimal string.
  */
 function cleanFloatingPoint(value) {
   const num = Number(value);
@@ -38,19 +38,30 @@ function cleanFloatingPoint(value) {
 
   if (num === 0) return "0";
 
-  // Convert through scientific notation first.
-  const scientific = num.toExponential(15);
+  /*
+   * For integers, don't run through a limited-precision exponential representation.
+   */
+  if (Number.isInteger(num)) {
+    return num.toLocaleString("en-US", {
+      useGrouping: false,
+      maximumFractionDigits: 0,
+    });
+  }
+
+  /*
+   * For decimal values, use enough significant digits to preserveuseful precision without exposing the tiny floating-point tail.
+   */
+  const scientific = num.toExponential(21);
   const [coefficient, exponentString] = scientific.split("e");
 
   const exponent = Number(exponentString);
 
-  // Remove unnecessary trailing zeros from the coefficient.
+  // Remove trailing zeros from the coefficient.
   const cleanCoefficient = coefficient.replace(/\.?0+$/, "");
 
   const [integerPart, decimalPart = ""] = cleanCoefficient.split(".");
   const digits = integerPart + decimalPart;
 
-  // Position of the decimal point relative to the digits.
   const decimalPosition = 1 + exponent;
 
   let result;
@@ -66,11 +77,15 @@ function cleanFloatingPoint(value) {
       digits.slice(decimalPosition);
   }
 
-  // Remove unnecessary trailing decimal zeros.
+  /*
+   * Remove unnecessary trailing zeros after the decimal point.
+   */
   result = result.replace(/(\.\d*?)0+$/, "$1");
   result = result.replace(/\.$/, "");
 
-  // Avoid "-0".
+  /*
+   * Avoid "-0".
+   */
   if (result === "-0") return "0";
 
   return result;
@@ -81,18 +96,23 @@ function formatDecimalGroups(value, approx = false) {
 
   if (!Number.isFinite(num)) return "...";
 
-  const cleaned = cleanFloatingPoint(num);
-
-  // For approximate values
+  /*
+   * Approximate values intentionally use the existing 9-decimal
+   * behavior.
+   */
   if (approx) {
-    return Number(cleaned).toLocaleString("en-US", {
+    return num.toLocaleString("en-US", {
       maximumFractionDigits: 9,
       minimumFractionDigits: 0,
       useGrouping: true,
     });
   }
 
-  // Add thousands separators without converting the value back to Number.
+  const cleaned = cleanFloatingPoint(num);
+
+  /*
+   * Add thousands separators without converting the value back into Number.
+   */
   const [integerPart, decimalPart] = cleaned.split(".");
 
   const sign = integerPart.startsWith("-") ? "-" : "";
