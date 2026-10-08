@@ -4,6 +4,7 @@ import RealWorldBox from "./RealWorldBox";
 import { formatNumber, formatNumberString } from "../utils/formatNumber";
 import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
+import Decimal from "decimal.js";
 import MolConverter from "./MolConverter";
 import TemperatureConverter from "./TemperatureConverter";
 import RefractiveIndexConverter from "./RefractiveIndexConverter";
@@ -241,51 +242,87 @@ function Converter({ categoryId, lang }) {
   const convert = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
     const to = units.find((u) => u.id === toUnitId);
+  
     if (!from || !to) return null;
     if (inputValue === "") return null;
-
-    const x = parseFloat(inputValue);
-    if (isNaN(x)) return null;
-
-    const parseF = (v) =>
-      typeof v === "object" && v?.value ? parseFloat(v.value) : parseFloat(v);
-
-    const fromF = parseF(from.to_base_factor);
-    const toF = parseF(to.to_base_factor);
-
-    if (isNaN(fromF) || isNaN(toF) || toF === 0) return null;
-    
-    const result = (x * fromF) / toF;
-    console.log("convert result:", result);
-    return result;
+  
+    try {
+      const parseDecimal = (value) => {
+        if (typeof value === "object" && value?.value != null) {
+          return new Decimal(String(value.value));
+        }
+  
+        return new Decimal(String(value));
+      };
+  
+      const x = new Decimal(inputValue);
+      const fromFactor = parseDecimal(from.to_base_factor);
+      const toFactor = parseDecimal(to.to_base_factor);
+  
+      if (toFactor.isZero()) return null;
+  
+      return x.mul(fromFactor).div(toFactor);
+    } catch (error) {
+      console.error("Conversion error:", error);
+      return null;
+    }
   };
 
   const compare = (item) => {
     if (!item) return null;
     if (inputValue === "") return null;
-
+  
     const from = units.find((u) => u.id === fromUnit);
     if (!from) return null;
-
-    const x = parseFloat(inputValue);
-    if (isNaN(x)) return null;
-
-    const parseF = (v) =>
-      typeof v === "object" && v?.value ? parseFloat(v.value) : parseFloat(v);
-
-    const base = x * parseF(from.to_base_factor);
-
-    let raw = NaN;
-    if (item.expression) raw = parseScientific(item.expression);
-    if ((!raw || isNaN(raw)) && item.approx_value)
-      raw = parseFloat(item.approx_value);
-    if ((!raw || isNaN(raw)) && item.scientific_value)
-      raw = parseFloat(item.scientific_value);
-
-    if (!raw || isNaN(raw)) return null;
-    return base / raw;
+  
+    try {
+      const parseDecimal = (value) => {
+        if (typeof value === "object" && value?.value != null) {
+          return new Decimal(String(value.value));
+        }
+  
+        return new Decimal(String(value));
+      };
+  
+      const x = new Decimal(inputValue);
+      const fromFactor = parseDecimal(from.to_base_factor);
+  
+      const base = x.mul(fromFactor);
+  
+      let raw = null;
+  
+      if (item.expression) {
+        try {
+          raw = parseDecimal(item.expression);
+        } catch {
+          raw = null;
+        }
+      }
+  
+      if (!raw && item.approx_value) {
+        try {
+          raw = parseDecimal(item.approx_value);
+        } catch {
+          raw = null;
+        }
+      }
+  
+      if (!raw && item.scientific_value) {
+        try {
+          raw = parseDecimal(item.scientific_value);
+        } catch {
+          raw = null;
+        }
+      }
+  
+      if (!raw || raw.isZero()) return null;
+  
+      return base.div(raw);
+    } catch (error) {
+      console.error("Comparison error:", error);
+      return null;
+    }
   };
-
   /** -----------------------
    *  RENDER
    * ----------------------- */
