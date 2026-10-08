@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import pb from "../utils/pocketbaseClient";
 import RealWorldBox from "./RealWorldBox";
 import { formatNumber } from "../utils/formatNumber";
+import Decimal from "decimal.js";
 import { useTheme } from "../context/ThemeContext";
 import { parseScientific } from "../utils/parseScientific";
 import { distributeBlankCards } from "../utils/blankCardDistributor";
@@ -134,69 +135,77 @@ function AuxiliaryConverter({ categoryId, lang = "en" }) {
   const getConvertedValue = (toUnitId) => {
     const from = units.find((u) => u.id === fromUnit);
     const to = units.find((u) => u.id === toUnitId);
+  
     if (!from || !to || !inputValue) return null;
-
-    const input = parseFloat(inputValue);
-
-    // TEMPERATURE SPECIAL CASE
-    if (auxCategory?.slug_en === "temperature") {
-      const fromFactor = parseFloat(from.to_base_factor);
-      const toFactor = parseFloat(to.to_base_factor);
-      const fromOffset = parseFloat(from.offset || 0);
-      const toOffset = parseFloat(to.offset || 0);
-
-      if ([fromFactor, toFactor].some(isNaN)) return null;
-
-      const kelvin = (input + fromOffset) * fromFactor;
-      return kelvin / toFactor - toOffset;
+  
+    try {
+      const input = new Decimal(inputValue);
+  
+      // TEMPERATURE SPECIAL CASE
+      if (auxCategory?.slug_en === "temperature") {
+        const fromFactor = new Decimal(from.to_base_factor);
+        const toFactor = new Decimal(to.to_base_factor);
+        const fromOffset = new Decimal(from.offset || 0);
+        const toOffset = new Decimal(to.offset || 0);
+  
+        const kelvin = input.plus(fromOffset).times(fromFactor);
+  
+        return kelvin.div(toFactor).minus(toOffset);
+      }
+  
+      // NORMAL CASE
+      const baseValue = input.times(new Decimal(from.to_base_factor));
+  
+      return baseValue.div(new Decimal(to.to_base_factor));
+    } catch (error) {
+      console.error("Conversion error:", error);
+      return null;
     }
-
-    // NORMAL CASE
-    const baseValue = input * from.to_base_factor;
-    return (baseValue / to.to_base_factor);
   };
-
+  
   const getComparisonValue = (item) => {
     if (!item || !inputValue) return null;
-
+  
     const from = units.find((u) => u.id === fromUnit);
     if (!from) return null;
-
-    const input = parseFloat(inputValue);
-
-    // Apply temperature conversion if this is temperature
-    if (auxCategory?.slug_en === "temperature") {
-      const fromFactor = parseFloat(from.to_base_factor);
-      const fromOffset = parseFloat(from.offset || 0);
-
-      if (isNaN(fromFactor)) return null;
-
-      // Convert input to Kelvin
-      const kelvin = (input + fromOffset) * fromFactor;
-
+  
+    try {
+      const input = new Decimal(inputValue);
+  
+      // TEMPERATURE COMPARISON
+      if (auxCategory?.slug_en === "temperature") {
+        const fromFactor = new Decimal(from.to_base_factor);
+        const fromOffset = new Decimal(from.offset || 0);
+  
+        const kelvin = input.plus(fromOffset).times(fromFactor);
+  
+        const comparisonValueRaw =
+          item.expression_value ||
+          item.approx_value ||
+          item.scientific_value;
+  
+        if (!comparisonValueRaw) return null;
+  
+        return kelvin.div(new Decimal(comparisonValueRaw));
+      }
+  
+      // NORMAL COMPARISON
+      const baseValue = input.times(new Decimal(from.to_base_factor));
+  
       const comparisonValueRaw =
-        parseFloat(item.expression_value) ||
-        parseFloat(item.approx_value) ||
-        parseFloat(item.scientific_value);
-
-      if (!comparisonValueRaw || isNaN(comparisonValueRaw)) return null;
-
-      return kelvin / comparisonValueRaw;
+        item.expression_value ||
+        item.approx_value ||
+        item.scientific_value;
+  
+      if (!comparisonValueRaw) return null;
+  
+      return baseValue.div(new Decimal(comparisonValueRaw));
+    } catch (error) {
+      console.error("Comparison error:", error);
+      return null;
     }
-
-    // NORMAL comparison for other categories
-    const baseValue = input * from.to_base_factor;
-
-    const comparisonValueRaw =
-      parseFloat(item.expression_value) ||
-      parseFloat(item.approx_value) ||
-      parseFloat(item.scientific_value);
-
-    if (!comparisonValueRaw || isNaN(comparisonValueRaw)) return null;
-
-    return baseValue / comparisonValueRaw;
   };
-
+  
   return (
     <div
       className="flex flex-col gap-6 overflow-x-hidden"
